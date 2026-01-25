@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, Plus, Wallet, Settings } from "lucide-react";
+import { Home, Users, Wallet, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/guests", icon: Users, label: "Guests" },
-  { href: "/inspire", icon: Plus, label: "Add", isCentral: true },
   { href: "/budget", icon: Wallet, label: "Budget" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
@@ -21,19 +20,6 @@ export function BottomNav() {
       <div className="flex items-center justify-around px-6 py-4">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
-          if (item.isCentral) {
-            return (
-              <div key={item.href} className="relative -top-8">
-                <Link
-                  href={item.href}
-                  className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/40"
-                  aria-label={item.label}
-                >
-                  <item.icon className="h-8 w-8" />
-                </Link>
-              </div>
-            );
-          }
           return (
             <Link
               key={item.href}
