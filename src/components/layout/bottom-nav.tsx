@@ -5,11 +5,10 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Timeline", icon: "calendar_month" },
+  { href: "/", label: "Home", icon: "home" },
+  { href: "/tasks", label: "Tasks", icon: "check_circle" },
   { href: "/guests", label: "Guests", icon: "group" },
-  { href: "/budget", label: "Budget", icon: "account_balance_wallet" },
-  { href: "/tasks", label: "Tasks", icon: "checklist" },
-  { href: "/settings", label: "Settings", icon: "settings" },
+  { href: "/budget", label: "Budget", icon: "payments" },
 ];
 
 export function BottomNav() {
@@ -35,7 +34,7 @@ export function BottomNav() {
               >
                 {item.icon}
               </span>
-              <span className={cn("text-[10px] uppercase tracking-tighter", isActive ? "font-bold" : "font-medium")}>
+              <span className={cn("text-[10px]", isActive ? "font-bold" : "font-medium")}>
                 {item.label}
               </span>
             </Link>
