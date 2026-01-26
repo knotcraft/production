@@ -17,11 +17,6 @@ export default function LoginPage() {
     return (
         <div className="flex min-h-screen w-full flex-col items-center bg-white text-text-dark font-sans antialiased">
             <div className="w-full pt-8 px-6 space-y-4">
-                <div className="flex gap-2 max-w-[400px] mx-auto">
-                    <div className="h-1.5 flex-1 rounded-full bg-primary"></div>
-                    <div className="h-1.5 flex-1 rounded-full bg-gray-100"></div>
-                    <div className="h-1.5 flex-1 rounded-full bg-gray-100"></div>
-                </div>
                 <div className="flex justify-center items-center max-w-[400px] mx-auto h-10">
                     <div className="text-primary font-extrabold text-xl tracking-tight">
                         <span className="material-symbols-outlined align-middle mr-1">favorite</span>
