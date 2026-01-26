@@ -322,11 +322,11 @@ export default function GuestsPage() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={handleUploadClick}>
+                                <DropdownMenuItem onSelect={handleUploadClick}>
                                     <Upload className="mr-2 h-4 w-4" />
                                     <span>Upload CSV</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleDownloadTemplate}>
+                                <DropdownMenuItem onSelect={handleDownloadTemplate}>
                                     <Download className="mr-2 h-4 w-4" />
                                     <span>Download Template</span>
                                 </DropdownMenuItem>
@@ -477,10 +477,10 @@ export default function GuestsPage() {
                                                 </div>
                                             )}
                                             {(guest.email || guest.phone || guest.notes) && <DropdownMenuSeparator />}
-                                            <DropdownMenuItem onClick={() => openGuestDialog(guest)}>
+                                            <DropdownMenuItem onSelect={() => openGuestDialog(guest)}>
                                                 <Pencil className="mr-2 h-4 w-4" /> Edit
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => openDeleteDialog(guest)} className="text-destructive">
+                                            <DropdownMenuItem onSelect={() => openDeleteDialog(guest)} className="text-destructive">
                                                 <Trash2 className="mr-2 h-4 w-4" /> Delete
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -581,6 +581,8 @@ export default function GuestsPage() {
         </div>
     );
 }
+
+    
 
     
 
