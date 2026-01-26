@@ -34,5 +34,6 @@ export interface Guest {
   phone?: string;
   address?: string;
   notes?: string;
+  diet?: 'none' | 'veg' | 'non-veg';
 }
     

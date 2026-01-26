@@ -34,7 +34,7 @@ import { useUser, useDatabase } from '@/firebase';
 import { ref, onValue, set, push, remove, update } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import type { Guest } from '@/lib/types';
-import { Loader2, MoreVertical, Mail, Phone, FileText, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, MoreVertical, Mail, Phone, FileText, Pencil, Trash2, Leaf, Beef } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
@@ -61,6 +61,7 @@ export default function GuestsPage() {
         group: '',
         email: '',
         notes: '',
+        diet: 'none',
     });
 
     // Filtering and Searching
@@ -109,11 +110,14 @@ export default function GuestsPage() {
             );
         }
 
+        const confirmedGuests = guests.filter(g => g.status === 'confirmed');
         const summaryData = {
             total: guests.length,
-            confirmed: guests.filter(g => g.status === 'confirmed').length,
+            confirmed: confirmedGuests.length,
             pending: guests.filter(g => g.status === 'pending').length,
             declined: guests.filter(g => g.status === 'declined').length,
+            veg: confirmedGuests.filter(g => g.diet === 'veg').length,
+            nonVeg: confirmedGuests.filter(g => g.diet === 'non-veg').length,
         };
 
         return { filteredGuests: filtered, summary: summaryData };
@@ -122,7 +126,7 @@ export default function GuestsPage() {
 
     const openGuestDialog = (guest: Guest | null) => {
         setActiveGuest(guest);
-        setFormState(guest || { name: '', side: 'both', status: 'pending', group: '', email: '', notes: '' });
+        setFormState(guest || { name: '', side: 'both', status: 'pending', group: '', email: '', notes: '', diet: 'none' });
         setIsGuestDialogOpen(true);
     };
 
@@ -196,12 +200,12 @@ export default function GuestsPage() {
                 </div>
                  <div className="px-4 pb-4">
                     <div className="flex p-1 bg-[#f4f0f1] dark:bg-slate-800 rounded-xl">
-                        <button onClick={() => setSideFilter('all')} className={cn("flex-1 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors", sideFilter === 'all' ? 'bg-white dark:bg-slate-700 text-primary' : 'text-muted-foreground')}>All Sides</button>
-                        <button onClick={() => setSideFilter('bride')} className={cn("flex-1 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors", sideFilter === 'bride' ? 'bg-white dark:bg-slate-700 text-primary' : 'text-muted-foreground')}>Bride's</button>
-                        <button onClick={() => setSideFilter('groom')} className={cn("flex-1 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors", sideFilter === 'groom' ? 'bg-white dark:bg-slate-700 text-primary' : 'text-muted-foreground')}>Groom's</button>
+                        <button onClick={() => setSideFilter('all')} className={cn("flex-1 py-2 text-sm font-semibold rounded-lg transition-colors", sideFilter === 'all' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-muted-foreground')}>All Sides</button>
+                        <button onClick={() => setSideFilter('bride')} className={cn("flex-1 py-2 text-sm font-semibold rounded-lg transition-colors", sideFilter === 'bride' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-muted-foreground')}>Bride's</button>
+                        <button onClick={() => setSideFilter('groom')} className={cn("flex-1 py-2 text-sm font-semibold rounded-lg transition-colors", sideFilter === 'groom' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-muted-foreground')}>Groom's</button>
                     </div>
                 </div>
-                 <div className="grid grid-cols-3 gap-3 px-4 pb-4">
+                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 px-4 pb-4">
                     <div className="flex flex-col gap-1 rounded-xl p-3 border border-[#e6dbde] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
                         <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">Total Invited</p>
                         <p className="text-primary tracking-light text-xl font-bold leading-tight">{summary.total}</p>
@@ -213,6 +217,14 @@ export default function GuestsPage() {
                     <div className="flex flex-col gap-1 rounded-xl p-3 border border-[#e6dbde] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
                         <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">Pending</p>
                         <p className="text-gray-500 tracking-light text-xl font-bold leading-tight">{summary.pending}</p>
+                    </div>
+                    <div className="flex flex-col gap-1 rounded-xl p-3 border border-[#e6dbde] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">Veg</p>
+                        <p className="text-teal-600 tracking-light text-xl font-bold leading-tight">{summary.veg}</p>
+                    </div>
+                     <div className="flex flex-col gap-1 rounded-xl p-3 border border-[#e6dbde] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">Non-Veg</p>
+                        <p className="text-orange-600 tracking-light text-xl font-bold leading-tight">{summary.nonVeg}</p>
                     </div>
                 </div>
             </header>
@@ -276,7 +288,7 @@ export default function GuestsPage() {
                                         <div className="flex items-center gap-2 mt-1">
                                             {guest.notes ? (
                                                 <>
-                                                <span className="material-symbols-outlined text-sm text-muted-foreground">restaurant</span>
+                                                <span className="material-symbols-outlined text-sm text-muted-foreground">sticky_note_2</span>
                                                 <p className="text-muted-foreground text-xs font-normal">{guest.notes}</p>
                                                 </>
                                             ) : guest.status === 'declined' ? (
@@ -285,6 +297,12 @@ export default function GuestsPage() {
                                                 <p className="text-muted-foreground text-xs font-normal">Cannot Attend</p>
                                                 </>
                                             ) : null}
+                                            {guest.diet && guest.diet !== 'none' && (
+                                                <div className="flex items-center gap-1 text-muted-foreground">
+                                                    {guest.diet === 'veg' ? <Leaf className="h-3 w-3 text-green-500" /> : <Beef className="h-3 w-3 text-orange-500" />}
+                                                    <p className="text-xs font-normal capitalize">{guest.diet}</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end gap-1">
@@ -306,19 +324,19 @@ export default function GuestsPage() {
                                         <DropdownMenuContent align="end">
                                             {guest.email && (
                                                 <div className="relative flex select-none items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-                                                    <Mail className="mr-2 h-4 w-4" />
+                                                    <Mail className="h-4 w-4" />
                                                     <span>{guest.email}</span>
                                                 </div>
                                             )}
                                             {guest.phone && (
                                                 <div className="relative flex select-none items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-                                                    <Phone className="mr-2 h-4 w-4" />
+                                                    <Phone className="h-4 w-4" />
                                                     <span>{guest.phone}</span>
                                                 </div>
                                             )}
                                             {guest.notes && (
                                                 <div className="relative flex select-none items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-                                                    <FileText className="mr-2 h-4 w-4" />
+                                                    <FileText className="h-4 w-4" />
                                                     <span className="truncate max-w-48">{guest.notes}</span>
                                                 </div>
                                             )}
@@ -339,50 +357,58 @@ export default function GuestsPage() {
             </main>
 
              <Dialog open={isGuestDialogOpen} onOpenChange={setIsGuestDialogOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>{activeGuest ? 'Edit' : 'Add'} Guest</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">Name</Label>
-                            <Input id="name" value={formState.name} onChange={(e) => handleFormChange('name', e.target.value)} className="col-span-3" />
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input id="name" value={formState.name || ''} onChange={(e) => handleFormChange('name', e.target.value)} />
                         </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="group" className="text-right">Group</Label>
-                            <Input id="group" value={formState.group || ''} onChange={(e) => handleFormChange('group', e.target.value)} className="col-span-3" placeholder="e.g. Family, Friends" />
+                         <div className="space-y-2">
+                            <Label htmlFor="group">Group</Label>
+                            <Input id="group" value={formState.group || ''} onChange={(e) => handleFormChange('group', e.target.value)} placeholder="e.g. Family, Friends" />
                         </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Side</Label>
-                             <RadioGroup value={formState.side} onValueChange={(val: 'bride' | 'groom' | 'both') => handleFormChange('side', val)} className="col-span-3 flex gap-4">
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="bride" id="r-bride" /><Label htmlFor="r-bride">Bride</Label></div>
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="groom" id="r-groom" /><Label htmlFor="r-groom">Groom</Label></div>
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="r-both" /><Label htmlFor="r-both">Both</Label></div>
+                         <div className="space-y-2">
+                            <Label>Side</Label>
+                             <RadioGroup value={formState.side} onValueChange={(val) => handleFormChange('side', val)} className="flex gap-4 pt-1">
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="bride" id="r-bride" /><Label htmlFor="r-bride" className="font-normal">Bride</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="groom" id="r-groom" /><Label htmlFor="r-groom" className="font-normal">Groom</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="r-both" /><Label htmlFor="r-both" className="font-normal">Both</Label></div>
                             </RadioGroup>
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Status</Label>
-                             <RadioGroup value={formState.status} onValueChange={(val: 'pending' | 'confirmed' | 'declined') => handleFormChange('status', val)} className="col-span-3 flex gap-4">
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="pending" id="s-pending" /><Label htmlFor="s-pending">Pending</Label></div>
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="confirmed" id="s-confirmed" /><Label htmlFor="s-confirmed">Confirmed</Label></div>
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="declined" id="s-declined" /><Label htmlFor="s-declined">Declined</Label></div>
+                        <div className="space-y-2">
+                            <Label>Status</Label>
+                             <RadioGroup value={formState.status} onValueChange={(val) => handleFormChange('status', val)} className="flex gap-4 pt-1">
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="pending" id="s-pending" /><Label htmlFor="s-pending" className="font-normal">Pending</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="confirmed" id="s-confirmed" /><Label htmlFor="s-confirmed" className="font-normal">Confirmed</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="declined" id="s-declined" /><Label htmlFor="s-declined" className="font-normal">Declined</Label></div>
                             </RadioGroup>
                         </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="email" className="text-right">Email</Label>
-                            <Input id="email" type="email" value={formState.email || ''} onChange={(e) => handleFormChange('email', e.target.value)} className="col-span-3" />
+                        <div className="space-y-2">
+                            <Label>Dietary Preference</Label>
+                             <RadioGroup value={formState.diet || 'none'} onValueChange={(val) => handleFormChange('diet', val)} className="flex gap-4 pt-1">
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="d-none" /><Label htmlFor="d-none" className="font-normal">None</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="veg" id="d-veg" /><Label htmlFor="d-veg" className="font-normal">Veg</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="non-veg" id="d-nonveg" /><Label htmlFor="d-nonveg" className="font-normal">Non-Veg</Label></div>
+                            </RadioGroup>
                         </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="phone" className="text-right">Phone</Label>
-                            <Input id="phone" type="tel" value={formState.phone || ''} onChange={(e) => handleFormChange('phone', e.target.value)} className="col-span-3" />
+                         <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" type="email" value={formState.email || ''} onChange={(e) => handleFormChange('email', e.target.value)} />
                         </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="notes" className="text-right">Notes</Label>
-                             <Textarea id="notes" value={formState.notes || ''} onChange={(e) => handleFormChange('notes', e.target.value)} className="col-span-3" placeholder="e.g. Party of 2, dietary restrictions"/>
+                         <div className="space-y-2">
+                            <Label htmlFor="phone">Phone</Label>
+                            <Input id="phone" type="tel" value={formState.phone || ''} onChange={(e) => handleFormChange('phone', e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="notes">Notes</Label>
+                             <Textarea id="notes" value={formState.notes || ''} onChange={(e) => handleFormChange('notes', e.target.value)} placeholder="e.g. Party of 2, allergies"/>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button onClick={handleSaveGuest}>Save Guest</Button>
+                        <Button onClick={handleSaveGuest} className="w-full">Save Guest</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
