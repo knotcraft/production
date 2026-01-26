@@ -73,9 +73,11 @@ export default function SignupPage() {
 
 
                     <div className="pt-2">
-                        <button className="w-full h-14 bg-primary hover:bg-primary-hover text-white font-extrabold text-lg rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
-                            Sign Up
-                        </button>
+                        <Link href="/personalize" passHref>
+                            <button className="w-full h-14 bg-primary hover:bg-primary-hover text-white font-extrabold text-lg rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+                                Sign Up
+                            </button>
+                        </Link>
                     </div>
                 </form>
 

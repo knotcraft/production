@@ -13,7 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   const pathname = usePathname();
-  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password';
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password' || pathname === '/personalize';
 
   if (isAuthPage) {
     // To prevent a hydration mismatch, we can delay rendering the auth page content
