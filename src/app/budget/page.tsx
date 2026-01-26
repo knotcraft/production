@@ -27,23 +27,29 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUser, useDatabase } from '@/firebase';
 import { ref, onValue, set, push, remove, update } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import type { BudgetData, Category, Expense } from '@/lib/types';
-import { Loader2, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Loader2, MoreVertical, Pencil, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 
 const categoryStyles = [
     { color: 'primary', icon: 'home_work', bg: 'bg-primary/10', text: 'text-primary' },
-    { color: 'orange', icon: 'restaurant', bg: 'bg-orange-100 dark:bg-orange-900/50', text: 'text-orange-600 dark:text-orange-400' },
-    { color: 'indigo', icon: 'photo_camera', bg: 'bg-indigo-100 dark:bg-indigo-900/50', text: 'text-indigo-600 dark:text-indigo-400' },
-    { color: 'pink', icon: 'local_florist', bg: 'bg-pink-100 dark:bg-pink-900/50', text: 'text-pink-600 dark:text-pink-400' },
-    { color: 'emerald', icon: 'music_note', bg: 'bg-emerald-100 dark:bg-emerald-900/50', text: 'text-emerald-600 dark:text-emerald-400' },
-    { color: 'sky', icon: 'card_giftcard', bg: 'bg-sky-100 dark:bg-sky-900/50', text: 'text-sky-600 dark:text-sky-400' },
+    { color: 'orange-500', icon: 'restaurant', bg: 'bg-orange-100 dark:bg-orange-900/50', text: 'text-orange-600 dark:text-orange-400' },
+    { color: 'indigo-500', icon: 'photo_camera', bg: 'bg-indigo-100 dark:bg-indigo-900/50', text: 'text-indigo-600 dark:text-indigo-400' },
+    { color: 'pink-500', icon: 'local_florist', bg: 'bg-pink-100 dark:bg-pink-900/50', text: 'text-pink-600 dark:text-pink-400' },
+    { color: 'emerald-500', icon: 'music_note', bg: 'bg-emerald-100 dark:bg-emerald-900/50', text: 'text-emerald-600 dark:text-emerald-400' },
+    { color: 'sky-500', icon: 'card_giftcard', bg: 'bg-sky-100 dark:bg-sky-900/50', text: 'text-sky-600 dark:text-sky-400' },
 ];
 
 export default function BudgetPage() {
@@ -92,11 +98,15 @@ export default function BudgetPage() {
   }, [user, database]);
 
   const { totalSpent, remainingBudget, categories } = useMemo(() => {
-    const cats = budgetData?.categories ? Object.entries(budgetData.categories).map(([id, cat]) => {
+    if (!budgetData || !budgetData.categories) {
+        return { totalSpent: 0, remainingBudget: budgetData?.total || 0, categories: [] };
+    }
+    
+    const cats = Object.entries(budgetData.categories).map(([id, cat]) => {
         const expensesList = cat.expenses ? Object.values(cat.expenses) : [];
         const spent = expensesList.reduce((sum, expense) => sum + expense.amount, 0);
-        return { id, ...cat, spent };
-    }) : [];
+        return { id, ...cat, spent, expenses: cat.expenses || {} };
+    });
     
     const totalSpent = cats.reduce((sum, cat) => sum + (cat.spent || 0), 0);
     const remainingBudget = (budgetData?.total || 0) - totalSpent;
@@ -196,7 +206,7 @@ export default function BudgetPage() {
     const description = expenseDescriptionInput.trim();
     const date = expenseDateInput;
     if (isNaN(amount) || amount <= 0 || !description || !date) {
-      toast({ variant: 'destructive', title: 'Invalid amount' });
+      toast({ variant: 'destructive', title: 'Invalid input', description: 'Please check your expense details.' });
       return;
     }
 
@@ -343,7 +353,7 @@ export default function BudgetPage() {
                         </div>
                          <div className="flex flex-col gap-1.5">
                             <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                                <div className="h-full rounded-full" style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: progress > 100 ? '#ef4444' : `hsl(var(--${style.color}))` }}></div>
+                                <div className="h-full rounded-full" style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: progress > 100 ? '#ef4444' : `hsl(var(--primary))` }}></div>
                             </div>
                             <div className="flex justify-between">
                                 <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">{Math.round(progress)}% utilized</p>
@@ -383,9 +393,17 @@ export default function BudgetPage() {
                             <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No expenses added yet.</p>
                           )}
                         </div>
-                        <Button onClick={() => openExpenseDialog(cat, null)} variant="outline" className="mt-4 w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 h-9">
-                          <Plus className="mr-2 h-4 w-4" /> Add Expense
-                        </Button>
+                        <div className="flex gap-2 mt-4">
+                            <Button onClick={() => openExpenseDialog(cat, null)} variant="outline" className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 h-9">
+                              <Plus className="mr-2 h-4 w-4" /> Add Expense
+                            </Button>
+                            <Button onClick={() => openCategoryDialog(cat)} variant="ghost" size="icon" className="h-9 w-9 border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                                <Pencil className="h-4 w-4"/>
+                            </Button>
+                             <Button onClick={() => openDeleteDialog(cat)} variant="ghost" size="icon" className="h-9 w-9 border bg-white dark:bg-slate-900 border-destructive/20 dark:border-destructive/20 text-destructive">
+                                <Trash2 className="h-4 w-4"/>
+                            </Button>
+                        </div>
                     </AccordionContent>
                   </AccordionItem>
                 )
@@ -422,7 +440,6 @@ export default function BudgetPage() {
             </div>
           </div>
           <DialogFooter>
-            {activeCategory && <Button variant="destructive" onClick={() => openDeleteDialog(activeCategory)} className="mr-auto"><Trash2/></Button>}
             <Button onClick={handleSaveCategory}>Save</Button>
           </DialogFooter>
         </DialogContent>
@@ -460,14 +477,14 @@ export default function BudgetPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the "{activeCategory?.name}" category and all its data. This action cannot be undone.
+              This will permanently delete the "{activeCategory?.name}" category and all its expenses. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCategory}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogContent>
+        </DialogContent>
       </AlertDialog>
 
       <div className="fixed bottom-28 right-6 z-30">
@@ -478,5 +495,3 @@ export default function BudgetPage() {
     </div>
   );
 }
-
-    
