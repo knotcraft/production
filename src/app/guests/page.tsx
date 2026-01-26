@@ -40,12 +40,6 @@ import { Loader2, MoreVertical, Mail, Phone, FileText, Pencil, Trash2, Leaf, Bee
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 
 const statusFilters: Guest['status'][] = ['pending', 'confirmed', 'declined'];
 
@@ -57,10 +51,9 @@ export default function GuestsPage() {
     
     // Dialog states
     const [isGuestDialogOpen, setIsGuestDialogOpen] = useState(false);
+    const [guestToEdit, setGuestToEdit] = useState<Guest | null>(null);
     const [guestToDelete, setGuestToDelete] = useState<Guest | null>(null);
     
-    // Active item state
-    const [activeGuest, setActiveGuest] = useState<Guest | null>(null);
 
     // Form state
     const [formState, setFormState] = useState<Partial<Guest>>({
@@ -138,7 +131,7 @@ export default function GuestsPage() {
 
 
     const openGuestDialog = (guest: Guest | null) => {
-        setActiveGuest(guest);
+        setGuestToEdit(guest);
         setFormState(guest || { name: '', side: 'both', status: 'pending', group: '', email: '', phone: '', notes: '', diet: 'none' });
         setIsGuestDialogOpen(true);
     };
@@ -153,9 +146,9 @@ export default function GuestsPage() {
         delete guestData.id;
 
         try {
-            if (activeGuest?.id) {
+            if (guestToEdit?.id) {
                 // Editing existing guest
-                const guestRef = ref(database, `users/${user.uid}/guests/${activeGuest.id}`);
+                const guestRef = ref(database, `users/${user.uid}/guests/${guestToEdit.id}`);
                 await update(guestRef, guestData);
                 toast({ title: 'Success', description: 'Guest updated.' });
             } else {
@@ -166,7 +159,7 @@ export default function GuestsPage() {
                 toast({ title: 'Success', description: 'Guest added.' });
             }
             setIsGuestDialogOpen(false);
-            setActiveGuest(null);
+            setGuestToEdit(null);
         } catch(e) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not save guest.' });
         }
@@ -413,7 +406,6 @@ export default function GuestsPage() {
                         </div>
                     ) : (
                         <div className="space-y-2 p-2">
-                            <TooltipProvider>
                             {filteredGuests.map(guest => (
                                 <div key={guest.id} className={cn(
                                     "bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4 group",
@@ -441,18 +433,6 @@ export default function GuestsPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        {guest.diet && guest.diet !== 'none' && (
-                                            <Tooltip>
-                                                <TooltipTrigger>
-                                                    <div className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
-                                                        {guest.diet === 'veg' ? <Leaf className="h-4 w-4 text-green-500" /> : <Beef className="h-4 w-4 text-orange-500" />}
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p className="capitalize">{guest.diet}</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        )}
                                         <span className={cn(
                                             "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
                                             guest.status === 'confirmed' && 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400',
@@ -468,12 +448,14 @@ export default function GuestsPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                {(guest.email || guest.phone || guest.notes) && (
+                                                {(guest.email || guest.phone || guest.notes || (guest.diet && guest.diet !== 'none')) && (
                                                     <>
-                                                        <DropdownMenuLabel className="font-normal text-muted-foreground">Contact Info</DropdownMenuLabel>
-                                                        {guest.email && <div className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none"><Mail/>{guest.email}</div>}
-                                                        {guest.phone && <div className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none"><Phone/>{guest.phone}</div>}
-                                                        {guest.notes && <div className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none"><FileText/>{guest.notes}</div>}
+                                                        <DropdownMenuLabel className="font-normal text-muted-foreground flex items-center gap-2">
+                                                            {guest.diet === 'veg' ? <><Leaf className="h-4 w-4 text-green-500" /> Veg</> : guest.diet === 'non-veg' ? <><Beef className="h-4 w-4 text-orange-500" /> Non-Veg</> : 'Diet'}
+                                                        </DropdownMenuLabel>
+                                                        {guest.email && <div className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none"><Mail className="w-4 h-4 text-muted-foreground"/>{guest.email}</div>}
+                                                        {guest.phone && <div className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none"><Phone className="w-4 h-4 text-muted-foreground"/>{guest.phone}</div>}
+                                                        {guest.notes && <div className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none"><FileText className="w-4 h-4 text-muted-foreground"/>{guest.notes}</div>}
                                                         <DropdownMenuSeparator />
                                                     </>
                                                 )}
@@ -488,16 +470,20 @@ export default function GuestsPage() {
                                     </div>
                                 </div>
                             ))}
-                            </TooltipProvider>
                         </div>
                     )}
                 </div>
             </main>
 
-             <Dialog open={isGuestDialogOpen} onOpenChange={setIsGuestDialogOpen}>
+             <Dialog open={isGuestDialogOpen} onOpenChange={(isOpen) => {
+                 if (!isOpen) {
+                     setGuestToEdit(null);
+                 }
+                 setIsGuestDialogOpen(isOpen);
+             }}>
                 <DialogContent className="sm:max-w-[425px] grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]">
                     <DialogHeader className="p-6 pb-0">
-                        <DialogTitle>{activeGuest ? 'Edit' : 'Add'} Guest</DialogTitle>
+                        <DialogTitle>{guestToEdit ? 'Edit' : 'Add'} Guest</DialogTitle>
                     </DialogHeader>
                     <ScrollArea className="h-full">
                       <div className="grid gap-4 py-4 px-6">
@@ -576,3 +562,4 @@ export default function GuestsPage() {
         </div>
     );
 }
+
