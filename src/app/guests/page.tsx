@@ -580,12 +580,5 @@ export default function GuestsPage() {
             </div>
         </div>
     );
-}
-
-    
-
-    
-
-    
 
     
