@@ -16,7 +16,7 @@ const GoogleIcon = () => (
 export default function LoginPage() {
     return (
         <div className="flex min-h-screen w-full flex-col items-center bg-white text-text-dark font-sans antialiased">
-            <div className="w-full pt-12 px-6 space-y-6">
+            <div className="w-full pt-8 px-6 space-y-4">
                 <div className="flex gap-2 max-w-[400px] mx-auto">
                     <div className="h-1.5 flex-1 rounded-full bg-primary"></div>
                     <div className="h-1.5 flex-1 rounded-full bg-gray-100"></div>
@@ -33,12 +33,12 @@ export default function LoginPage() {
                     <div className="w-10"></div>
                 </div>
             </div>
-            <div className="flex-1 w-full max-w-[400px] px-6 flex flex-col justify-center pb-12">
-                <div className="mb-10">
+            <div className="flex-1 w-full max-w-[400px] px-6 flex flex-col pb-8">
+                <div className="mt-8 mb-8">
                     <h1 className="text-4xl font-extrabold tracking-tight mb-3">Welcome back</h1>
                     <p className="text-text-muted text-lg font-medium">Log in to your wedding dashboard</p>
                 </div>
-                <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                     <div className="space-y-2">
                         <label className="text-sm font-bold uppercase tracking-wider text-text-dark">Email Address</label>
                         <div className="relative">
@@ -59,13 +59,13 @@ export default function LoginPage() {
                             <Link href="#" className="text-sm font-bold text-primary hover:underline">Forgot Password?</Link>
                         </div>
                     </div>
-                    <div className="pt-4">
+                    <div className="pt-2">
                         <button className="w-full h-14 bg-primary hover:bg-primary-hover text-white font-extrabold text-lg rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
                             Continue
                         </button>
                     </div>
                 </form>
-                <div className="mt-12">
+                <div className="mt-10">
                     <div className="relative mb-8 text-center">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-gray-100"></div>
@@ -83,14 +83,13 @@ export default function LoginPage() {
                         </button>
                     </div>
                 </div>
-                <div className="mt-auto pt-10 text-center">
+                <div className="mt-auto pt-8 text-center">
                     <p className="text-text-muted font-medium">
                         New to the platform?
                         <Link href="#" className="font-extrabold text-primary ml-1">Create Account</Link>
                     </p>
                 </div>
             </div>
-            <div className="h-8 w-full"></div>
         </div>
     );
 }
