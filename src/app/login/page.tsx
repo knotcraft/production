@@ -33,7 +33,7 @@ export default function LoginPage() {
                     <div className="w-10"></div>
                 </div>
             </div>
-            <div className="flex-1 w-full max-w-[400px] px-6 flex flex-col pb-8">
+            <div className="w-full max-w-[400px] px-6 flex flex-col pb-8">
                 <div className="mt-8 mb-8">
                     <h1 className="text-4xl font-extrabold tracking-tight mb-3">Welcome back</h1>
                     <p className="text-text-muted text-lg font-medium">Log in to your wedding dashboard</p>
@@ -83,7 +83,7 @@ export default function LoginPage() {
                         </button>
                     </div>
                 </div>
-                <div className="mt-auto pt-8 text-center">
+                <div className="mt-10 text-center">
                     <p className="text-text-muted font-medium">
                         New to the platform?
                         <Link href="#" className="font-extrabold text-primary ml-1">Create Account</Link>
