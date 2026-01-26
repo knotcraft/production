@@ -1,9 +1,12 @@
+'use client';
 import { FirebaseApp, initializeApp, getApps, getApp } from 'firebase/app';
 import { Auth, getAuth } from 'firebase/auth';
-import { Firestore, getFirestore } from 'firebase/firestore';
+import { Database, getDatabase } from 'firebase/database';
 import { firebaseConfig } from './config';
 
 let firebaseApp: FirebaseApp;
+let auth: Auth;
+let database: Database;
 
 // This check prevents re-initializing the app on hot reloads.
 if (getApps().length === 0) {
@@ -12,10 +15,10 @@ if (getApps().length === 0) {
   firebaseApp = getApp();
 }
 
-const auth: Auth = getAuth(firebaseApp);
-const firestore: Firestore = getFirestore(firebaseApp);
+auth = getAuth(firebaseApp);
+database = getDatabase(firebaseApp);
 
 export function initializeFirebase() {
   // Now this function just returns the already initialized instances.
-  return { firebaseApp, auth, firestore };
+  return { firebaseApp, auth, database };
 }

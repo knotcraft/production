@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { differenceInDays, format } from 'date-fns';
 import { useUser, useFirebase } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { ref, set } from 'firebase/database';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -12,7 +12,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function PersonalizePage() {
   const { user, loading: userLoading } = useUser();
-  const { firestore } = useFirebase();
+  const { database } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +55,7 @@ export default function PersonalizePage() {
   };
 
   const handleFinishSetup = async () => {
-    if (!user || !firestore) {
+    if (!user || !database) {
         toast({
             variant: "destructive",
             title: "Error",
@@ -75,12 +75,12 @@ export default function PersonalizePage() {
     setIsLoading(true);
 
     try {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        await setDoc(userDocRef, {
+        const userRef = ref(database, 'users/' + user.uid);
+        await set(userRef, {
             name: yourName,
             partnerName: partnerName,
             weddingDate: weddingDate,
-        }, { merge: true });
+        });
 
         toast({
             title: "Details Saved!",

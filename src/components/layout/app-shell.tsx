@@ -5,12 +5,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { useState, useEffect } from 'react';
 import { useUser, useFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { ref, get } from 'firebase/database';
 import { Loader2 } from 'lucide-react';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, loading: userLoading } = useUser();
-  const { firestore } = useFirebase();
+  const { database } = useFirebase();
   const router = useRouter();
   const pathname = usePathname();
   
@@ -38,15 +38,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
 
     // If there is a user, check if their profile is personalized.
-    if (user && firestore) {
+    if (user && database) {
       const checkUserProfile = async () => {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        const docSnap = await getDoc(userDocRef);
+        const userRef = ref(database, 'users/' + user.uid);
+        const snapshot = await get(userRef);
 
-        if (!docSnap.exists() && !isPersonalizePage) {
+        if (!snapshot.exists() && !isPersonalizePage) {
           // If profile doesn't exist and they are not on personalize page, redirect them.
           router.push('/personalize');
-        } else if (docSnap.exists() && isPersonalizePage) {
+        } else if (snapshot.exists() && isPersonalizePage) {
           // If profile exists and they are trying to access personalize page, redirect to home.
           router.push('/');
         } else {
@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         setIsProfileChecked(true);
     }
 
-  }, [user, userLoading, firestore, router, pathname, isAuthPage, isPersonalizePage]);
+  }, [user, userLoading, database, router, pathname, isAuthPage, isPersonalizePage]);
 
   // Show a loading screen while we check for user and profile status.
   if (userLoading || (user && !isProfileChecked)) {

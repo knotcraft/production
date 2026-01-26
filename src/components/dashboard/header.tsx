@@ -6,7 +6,7 @@ import { CountdownTimer } from '@/components/dashboard/countdown-timer';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useUser, useFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { ref, get } from 'firebase/database';
 import { useEffect, useState } from 'react';
 
 type UserData = {
@@ -17,21 +17,21 @@ type UserData = {
 
 export function Header() {
   const { user } = useUser();
-  const { firestore, auth } = useFirebase();
+  const { database, auth } = useFirebase();
   const [userData, setUserData] = useState<UserData | null>(null);
 
   useEffect(() => {
-    if (user && firestore) {
+    if (user && database) {
       const fetchUserData = async () => {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUserData(userDoc.data() as UserData);
+        const userRef = ref(database, 'users/' + user.uid);
+        const snapshot = await get(userRef);
+        if (snapshot.exists()) {
+          setUserData(snapshot.val() as UserData);
         }
       };
       fetchUserData();
     }
-  }, [user, firestore]);
+  }, [user, database]);
 
   const heroImage = PlaceHolderImages.find(img => img.id === 'wedding-hero');
 
