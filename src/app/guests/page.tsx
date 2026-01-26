@@ -36,7 +36,7 @@ import { useUser, useDatabase } from '@/firebase';
 import { ref, onValue, set, push, remove, update } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import type { Guest } from '@/lib/types';
-import { Loader2, MoreVertical, Mail, Phone, FileText, Pencil, Trash2, Leaf, Beef, Upload, Download } from 'lucide-react';
+import { Loader2, MoreVertical, Mail, Phone, FileText, Pencil, Trash2, Leaf, Beef, Upload, Download, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -63,6 +63,7 @@ export default function GuestsPage() {
         status: 'pending',
         group: '',
         email: '',
+        phone: '',
         notes: '',
         diet: 'none',
     });
@@ -132,7 +133,7 @@ export default function GuestsPage() {
 
     const openGuestDialog = (guest: Guest | null) => {
         setActiveGuest(guest);
-        setFormState(guest || { name: '', side: 'both', status: 'pending', group: '', email: '', notes: '', diet: 'none' });
+        setFormState(guest || { name: '', side: 'both', status: 'pending', group: '', email: '', phone: '', notes: '', diet: 'none' });
         setIsGuestDialogOpen(true);
     };
 
@@ -196,7 +197,7 @@ export default function GuestsPage() {
             'john.doe@example.com', // email
             '123-456-7890', // phone
             'Allergic to peanuts', // notes
-            'veg' // diet (none, veg, non-veg)
+            'veg' // diet (none, veg, or non-veg)
         ];
         const csvContent = "data:text/csv;charset=utf-8," 
             + headers.join(",") + "\n" 
@@ -311,8 +312,10 @@ export default function GuestsPage() {
         <div className="flex flex-col bg-background-light dark:bg-background-dark min-h-screen">
             <header className="sticky top-0 z-40 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center p-4 justify-between">
-                    <Link href="/" className="text-slate-900 dark:text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors">
+                    <Link href="/" passHref>
+                      <Button variant="ghost" size="icon">
                         <span className="material-symbols-outlined">arrow_back_ios_new</span>
+                      </Button>
                     </Link>
                     <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center">Guest List</h2>
                     <div className="flex size-10 items-center justify-end">
@@ -333,45 +336,52 @@ export default function GuestsPage() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            style={{ display: 'none' }}
+                            accept=".csv,text/csv"
+                        />
                     </div>
                 </div>
                  <div className="px-4 pb-4">
-                    <div className="flex p-1 bg-[#f4f0f1] dark:bg-slate-800 rounded-xl">
+                    <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
                         <button onClick={() => setSideFilter('all')} className={cn("flex-1 py-2 text-sm font-semibold rounded-lg transition-colors", sideFilter === 'all' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-muted-foreground')}>All</button>
                         <button onClick={() => setSideFilter('bride')} className={cn("flex-1 py-2 text-sm font-semibold rounded-lg transition-colors", sideFilter === 'bride' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-muted-foreground')}>Bride's</button>
                         <button onClick={() => setSideFilter('groom')} className={cn("flex-1 py-2 text-sm font-semibold rounded-lg transition-colors", sideFilter === 'groom' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-muted-foreground')}>Groom's</button>
                     </div>
                 </div>
-                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 px-4 pb-4">
-                    <div className="flex flex-col gap-1 rounded-xl p-3 border border-[#e6dbde] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 px-4 pb-4">
+                    <div className="flex flex-col gap-1 rounded-xl p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                         <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">Total Invited</p>
                         <p className="text-primary tracking-light text-xl font-bold leading-tight">{summary.total}</p>
                     </div>
-                    <div className="flex flex-col gap-1 rounded-xl p-3 border border-[#e6dbde] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                    <div className="flex flex-col gap-1 rounded-xl p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                         <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">Confirmed</p>
                         <p className="text-green-600 tracking-light text-xl font-bold leading-tight">{summary.confirmed}</p>
                     </div>
-                    <div className="flex flex-col gap-1 rounded-xl p-3 border border-[#e6dbde] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                    <div className="flex flex-col gap-1 rounded-xl p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                         <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">Pending</p>
                         <p className="text-gray-500 tracking-light text-xl font-bold leading-tight">{summary.pending}</p>
                     </div>
-                    <div className="flex flex-col gap-1 rounded-xl p-3 border border-[#e6dbde] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                    <div className="flex flex-col gap-1 rounded-xl p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                         <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">Veg</p>
                         <p className="text-teal-600 tracking-light text-xl font-bold leading-tight">{summary.veg}</p>
                     </div>
-                     <div className="flex flex-col gap-1 rounded-xl p-3 border border-[#e6dbde] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+                     <div className="flex flex-col gap-1 rounded-xl p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                         <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">Non-Veg</p>
                         <p className="text-orange-600 tracking-light text-xl font-bold leading-tight">{summary.nonVeg}</p>
                     </div>
                 </div>
             </header>
 
-            <main className="bg-background-light dark:bg-background-dark pb-24">
+            <main className="pb-24">
                 <div className="px-4 py-3">
                      <div className="relative">
-                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground">search</span>
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input 
-                            className="pl-11 h-12 w-full bg-[#f4f0f1] dark:bg-slate-800 border-none rounded-xl"
+                            className="pl-11 h-12 w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl"
                             placeholder="Search guests..." 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -379,17 +389,17 @@ export default function GuestsPage() {
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2 px-4 pb-4">
-                    <button onClick={() => setStatusFilter('all')} className={cn("flex h-9 items-center justify-center gap-x-2 rounded-full px-5 shadow-sm transition-colors", statusFilter === 'all' ? 'bg-primary text-white' : 'bg-[#f4f0f1] dark:bg-gray-800 border border-gray-100 dark:border-gray-700')}>
-                        <p className={cn("text-sm", statusFilter === 'all' ? 'font-semibold' : 'font-medium text-foreground dark:text-gray-300')}>All Guests</p>
+                    <button onClick={() => setStatusFilter('all')} className={cn("flex h-9 items-center justify-center gap-x-2 rounded-full px-4 shadow-sm transition-colors", statusFilter === 'all' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700')}>
+                        <p className={cn("text-sm", statusFilter === 'all' ? 'font-semibold' : 'font-medium text-foreground dark:text-slate-300')}>All Guests</p>
                     </button>
                     {statusFilters.map(status => (
-                        <button key={status} onClick={() => setStatusFilter(status)} className={cn("flex h-9 items-center justify-center gap-x-2 rounded-full px-5 shadow-sm transition-colors", statusFilter === status ? 'bg-primary text-white' : 'bg-[#f4f0f1] dark:bg-gray-800 border border-gray-100 dark:border-gray-700')}>
-                            <p className={cn("text-sm capitalize", statusFilter === status ? 'font-semibold' : 'font-medium text-foreground dark:text-gray-300')}>{status}</p>
+                        <button key={status} onClick={() => setStatusFilter(status)} className={cn("flex h-9 items-center justify-center gap-x-2 rounded-full px-4 shadow-sm transition-colors", statusFilter === status ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700')}>
+                            <p className={cn("text-sm capitalize", statusFilter === status ? 'font-semibold' : 'font-medium text-foreground dark:text-slate-300')}>{status}</p>
                         </button>
                     ))}
                 </div>
                 
-                <div className="flex-1 overflow-y-auto px-2">
+                <div className="flex-1 px-2">
                      <div className="px-3 py-2 flex items-center justify-between">
                         <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Showing {filteredGuests.length} Guests</p>
                     </div>
@@ -418,7 +428,7 @@ export default function GuestsPage() {
                                             {guest.side !== 'both' && (
                                                 <span className={cn(
                                                     "text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase",
-                                                    guest.side === 'bride' ? 'bg-pink-50 text-pink-500 border-pink-100' : 'bg-blue-50 text-blue-500 border-blue-100'
+                                                    guest.side === 'bride' ? 'bg-pink-50 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400 border-pink-100 dark:border-pink-900/50' : 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/50'
                                                 )}>{guest.side}</span>
                                             )}
                                         </div>
@@ -438,9 +448,9 @@ export default function GuestsPage() {
                                     <div className="flex items-center gap-1">
                                         <span className={cn(
                                             "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                                            guest.status === 'confirmed' && 'bg-green-100 text-green-700',
-                                            guest.status === 'pending' && 'bg-gray-100 text-gray-600',
-                                            guest.status === 'declined' && 'bg-red-50 text-red-600'
+                                            guest.status === 'confirmed' && 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400',
+                                            guest.status === 'pending' && 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+                                            guest.status === 'declined' && 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-400'
                                         )}>
                                             {guest.status}
                                         </span>
@@ -470,10 +480,10 @@ export default function GuestsPage() {
                                                     </DropdownMenuLabel>
                                                 )}
                                                 {(guest.email || guest.phone || guest.notes) && <DropdownMenuSeparator />}
-                                                <DropdownMenuItem onClick={() => openGuestDialog(guest)}>
+                                                <DropdownMenuItem onSelect={() => openGuestDialog(guest)}>
                                                     <Pencil className="mr-2 h-4 w-4" /> Edit
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => openDeleteDialog(guest)} className="text-destructive">
+                                                <DropdownMenuItem onSelect={() => openDeleteDialog(guest)} className="text-destructive">
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -484,13 +494,6 @@ export default function GuestsPage() {
                         </div>
                     )}
                 </div>
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                    accept="text/csv,.csv"
-                />
             </main>
 
              <Dialog open={isGuestDialogOpen} onOpenChange={setIsGuestDialogOpen}>
@@ -546,8 +549,8 @@ export default function GuestsPage() {
                           </div>
                       </div>
                     </ScrollArea>
-                    <DialogFooter className="p-6 pt-0">
-                        <Button onClick={handleSaveGuest} className="w-full">Save Guest</Button>
+                    <DialogFooter className="p-6 pt-0 border-t mt-4">
+                        <Button onClick={handleSaveGuest} className="w-full mt-4">Save Guest</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -575,8 +578,5 @@ export default function GuestsPage() {
         </div>
     );
 }
-    
-
-    
 
     
