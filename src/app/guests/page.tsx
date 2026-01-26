@@ -51,9 +51,11 @@ export default function GuestsPage() {
     
     // Dialog states
     const [isGuestDialogOpen, setIsGuestDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    
+    // State for active item
     const [guestToEdit, setGuestToEdit] = useState<Guest | null>(null);
     const [guestToDelete, setGuestToDelete] = useState<Guest | null>(null);
-    
 
     // Form state
     const [formState, setFormState] = useState<Partial<Guest>>({
@@ -164,6 +166,11 @@ export default function GuestsPage() {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not save guest.' });
         }
     };
+    
+    const openDeleteDialog = (guest: Guest) => {
+        setGuestToDelete(guest);
+        setIsDeleteDialogOpen(true);
+    };
 
     const handleConfirmDelete = async () => {
         if (!user || !database || !guestToDelete) return;
@@ -173,6 +180,7 @@ export default function GuestsPage() {
         } catch (e) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not delete guest.' });
         } finally {
+            setIsDeleteDialogOpen(false);
             setGuestToDelete(null);
         }
     };
@@ -462,7 +470,7 @@ export default function GuestsPage() {
                                                 <DropdownMenuItem onSelect={() => openGuestDialog(guest)}>
                                                     <Pencil className="mr-2 h-4 w-4" /> Edit
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => setGuestToDelete(guest)} className="text-destructive">
+                                                <DropdownMenuItem onSelect={() => openDeleteDialog(guest)} className="text-destructive">
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -475,12 +483,7 @@ export default function GuestsPage() {
                 </div>
             </main>
 
-             <Dialog open={isGuestDialogOpen} onOpenChange={(isOpen) => {
-                 if (!isOpen) {
-                     setGuestToEdit(null);
-                 }
-                 setIsGuestDialogOpen(isOpen);
-             }}>
+             <Dialog open={isGuestDialogOpen} onOpenChange={setIsGuestDialogOpen}>
                 <DialogContent className="sm:max-w-[425px] grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]">
                     <DialogHeader className="p-6 pb-0">
                         <DialogTitle>{guestToEdit ? 'Edit' : 'Add'} Guest</DialogTitle>
@@ -539,7 +542,7 @@ export default function GuestsPage() {
                 </DialogContent>
             </Dialog>
 
-            <AlertDialog open={!!guestToDelete} onOpenChange={(isOpen) => !isOpen && setGuestToDelete(null)}>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -562,4 +565,3 @@ export default function GuestsPage() {
         </div>
     );
 }
-
