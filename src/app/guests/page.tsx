@@ -495,7 +495,7 @@ export default function GuestsPage() {
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
-                    accept=".csv"
+                    accept="text/csv,.csv"
                 />
             </main>
 
