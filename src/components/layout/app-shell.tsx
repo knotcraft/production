@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -85,10 +86,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   // If user is authenticated and personalized, show the full app shell.
   return (
     <div className="text-foreground transition-colors duration-300">
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-x-hidden bg-background shadow-2xl pb-28">
+      <div className="relative mx-auto flex min-h-screen max-w-md flex-col overflow-x-hidden bg-background-light dark:bg-background-dark shadow-2xl pb-24">
         <main>{children}</main>
         <BottomNav />
       </div>
     </div>
   );
 }
+
+    
