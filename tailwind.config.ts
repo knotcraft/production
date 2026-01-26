@@ -13,6 +13,7 @@ export default {
         body: ['"Plus Jakarta Sans"', 'sans-serif'],
         headline: ['"Plus Jakarta Sans"', 'sans-serif'],
         code: ['monospace'],
+        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -29,6 +30,7 @@ export default {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
         },
+        'primary-hover': 'hsl(var(--primary-hover))',
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))',
@@ -37,6 +39,7 @@ export default {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',
         },
+        'text-muted': 'hsl(var(--text-muted-login))',
         accent: {
           DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))',
@@ -46,6 +49,8 @@ export default {
           foreground: 'hsl(var(--destructive-foreground))',
         },
         border: 'hsl(var(--border))',
+        'border-light': 'hsl(var(--border-light))',
+        'text-dark': 'hsl(var(--text-dark))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         chart: {
@@ -67,9 +72,11 @@ export default {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
+        lg: '0.75rem',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        xl: "1rem",
+        "2xl": "1.5rem",
       },
       keyframes: {
         'accordion-down': {
