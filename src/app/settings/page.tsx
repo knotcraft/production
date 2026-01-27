@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -13,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, LogOut, Trash2 } from 'lucide-react';
+import { Loader2, LogOut, Trash2, Upload } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -35,7 +34,7 @@ export default function SettingsPage() {
   const [isTasksAlertOpen, setIsTasksAlertOpen] = useState(false);
   
   const [newImage, setNewImage] = useState<string | null>(null);
-  const [isSavingImage, setIsSavingImage] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -86,21 +85,75 @@ export default function SettingsPage() {
       setSaving(false);
     }
   };
+
+  const resizeImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (!event.target?.result) {
+            return reject(new Error("FileReader did not load file."));
+        }
+        const img = document.createElement('img');
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1920;
+          const MAX_HEIGHT = 1080;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            return reject(new Error('Could not get canvas context'));
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(dataUrl);
+        };
+        img.onerror = reject;
+        img.src = event.target.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
   
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setNewImage(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+        setIsProcessingImage(true);
+        toast({ title: "Processing image...", description: "Please wait a moment." });
+        try {
+            const resizedDataUrl = await resizeImage(file);
+            setNewImage(resizedDataUrl);
+        } catch (error) {
+            toast({
+              variant: "destructive",
+              title: "Image Processing Failed",
+              description: "Could not process the selected image. Please try another one.",
+            });
+        } finally {
+            setIsProcessingImage(false);
+        }
     }
   };
 
   const handleSaveImage = async () => {
       if (!user || !database || !newImage) return;
-      setIsSavingImage(true);
+      setIsProcessingImage(true);
       try {
           await update(ref(database, `users/${user.uid}`), {
               heroImage: newImage,
@@ -119,7 +172,7 @@ export default function SettingsPage() {
               description: error.message || 'Could not save your image.',
           });
       } finally {
-          setIsSavingImage(false);
+          setIsProcessingImage(false);
       }
   };
 
@@ -208,7 +261,7 @@ export default function SettingsPage() {
             <CardHeader>
                 <CardTitle>Dashboard Image</CardTitle>
                 <CardDescription>
-                    Change the hero image on your main dashboard.
+                    Change the hero image on your main dashboard. This will be resized and compressed.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -221,6 +274,11 @@ export default function SettingsPage() {
                             className="object-cover"
                         />
                     )}
+                     {isProcessingImage && (
+                        <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    )}
                 </div>
                 <input
                     type="file"
@@ -230,11 +288,17 @@ export default function SettingsPage() {
                     accept="image/png, image/jpeg, image/webp"
                 />
                 {newImage ? (
-                    <Button onClick={handleSaveImage} disabled={isSavingImage} className="w-full">
-                        {isSavingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Image'}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button onClick={() => { setNewImage(null); if(fileInputRef.current) fileInputRef.current.value = ''; }} variant="outline" className="w-full">
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveImage} disabled={isProcessingImage} className="w-full">
+                            {isProcessingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Image'}
+                        </Button>
+                    </div>
                 ) : (
-                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full" disabled={isProcessingImage}>
+                        <Upload className="mr-2 h-4 w-4" />
                         Choose Image...
                     </Button>
                 )}
