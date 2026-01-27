@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirebase } from '@/firebase';
-import { ref, onValue, set, push, remove, update } from 'firebase/database';
+import { ref, onValue, set, push, update } from 'firebase/database';
 import type { Task } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import {
@@ -14,16 +14,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import {
   Accordion,
   AccordionContent,
@@ -71,10 +61,6 @@ export default function TasksPage() {
     const [searchQuery, setSearchQuery] = useState('');
     
     const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    
-    const [activeTask, setActiveTask] = useState<Task | null>(null);
-    const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
     
     const [formState, setFormState] = useState<Partial<Task>>({
         title: '',
@@ -128,9 +114,8 @@ export default function TasksPage() {
     }, [tasks, searchQuery]);
 
 
-    const openTaskDialog = (task: Task | null) => {
-        setActiveTask(task);
-        setFormState(task || { 
+    const openTaskDialog = () => {
+        setFormState({ 
             title: '', 
             dueDate: new Date().toISOString().split('T')[0], 
             notes: '', 
@@ -151,37 +136,14 @@ export default function TasksPage() {
         delete taskData.id;
 
         try {
-            if (activeTask?.id) {
-                await update(ref(database, `users/${user.uid}/tasks/${activeTask.id}`), taskData);
-                toast({ variant: 'success', title: 'Success', description: 'Task updated.' });
-            } else {
-                await set(push(ref(database, `users/${user.uid}/tasks`)), taskData);
-                toast({ variant: 'success', title: 'Success', description: 'Task added.' });
-            }
+            await set(push(ref(database, `users/${user.uid}/tasks`)), taskData);
+            toast({ variant: 'success', title: 'Success', description: 'Task added.' });
             setIsTaskDialogOpen(false);
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message || 'Could not save task.' });
         }
     };
     
-    const openDeleteDialog = (task: Task) => {
-        setTaskToDelete(task);
-        setIsDeleteDialogOpen(true);
-    }
-    
-    const handleDeleteTask = async () => {
-        if (!user || !database || !taskToDelete) return;
-        try {
-            await remove(ref(database, `users/${user.uid}/tasks/${taskToDelete.id}`));
-            toast({ variant: 'success', title: 'Success', description: 'Task deleted.' });
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete task.' });
-        } finally {
-            setIsDeleteDialogOpen(false);
-            setTaskToDelete(null);
-        }
-    };
-
     const toggleTaskCompletion = async (task: Task) => {
         if (!user || !database) return;
         try {
@@ -261,13 +223,13 @@ export default function TasksPage() {
                       </AccordionTrigger>
                       <AccordionContent className="p-2 pt-0 space-y-1">
                         {group.tasks.sort((a,b) => (a.completed ? 1 : -1) - (b.completed ? 1 : -1) || new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).map(task => (
-                           <div key={task.id} onClick={() => openTaskDialog(task)} className="flex items-center gap-3 px-3 py-3 rounded-lg bg-white/50 dark:bg-white/5 cursor-pointer group/task">
+                           <div key={task.id} className="flex items-center gap-3 px-3 py-3 rounded-lg bg-white/50 dark:bg-white/5 group/task">
                               <div className="flex size-6 items-center justify-center" onClick={(e) => { e.stopPropagation(); toggleTaskCompletion(task);}}>
                                 <input
                                   type="checkbox"
                                   checked={task.completed}
                                   readOnly
-                                  className="custom-checkbox h-5 w-5 rounded-full border-[#e6dbde] dark:border-[#4d3a3e] border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-0 focus:ring-offset-0 focus:outline-none"
+                                  className="custom-checkbox h-5 w-5 rounded-full border-[#e6dbde] dark:border-[#4d3a3e] border-2 bg-transparent text-primary checked:bg-primary checked:border-primary focus:ring-0 focus:ring-offset-0 focus:outline-none cursor-pointer"
                                 />
                               </div>
                               <div className={cn("flex flex-col flex-1", task.completed && "checked-task")}>
@@ -284,14 +246,14 @@ export default function TasksPage() {
              )}
           </main>
           
-          <button onClick={() => openTaskDialog(null)} className="fixed bottom-28 right-6 flex items-center justify-center size-14 bg-primary text-white rounded-full shadow-lg shadow-primary/30 z-30 active:scale-95 transition-transform">
+          <button onClick={() => openTaskDialog()} className="fixed bottom-28 right-6 flex items-center justify-center size-14 bg-primary text-white rounded-full shadow-lg shadow-primary/30 z-30 active:scale-95 transition-transform">
             <span className="material-symbols-outlined text-3xl">add</span>
           </button>
             
           <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
               <DialogContent>
                   <DialogHeader>
-                      <DialogTitle>{activeTask ? 'Edit' : 'Add'} Task</DialogTitle>
+                      <DialogTitle>Add Task</DialogTitle>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                       <div className="space-y-2">
@@ -330,19 +292,6 @@ export default function TasksPage() {
                   </DialogFooter>
               </DialogContent>
           </Dialog>
-
-          <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-              <AlertDialogContent>
-                  <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>This action cannot be undone. This will permanently delete the task "{taskToDelete?.title}".</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                      <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteTask} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                  </AlertDialogFooter>
-              </AlertDialogContent>
-          </AlertDialog>
         </div>
     );
 }
