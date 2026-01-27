@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -25,6 +24,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Accordion,
   AccordionContent,
@@ -64,6 +72,8 @@ const priorityMap = {
   Low: { color: 'text-green-500', iconFill: 0 },
 };
 
+type SortOption = 'dueDateAsc' | 'dueDateDesc' | 'priorityDesc' | 'priorityAsc' | 'titleAsc' | 'titleDesc';
+
 export default function TasksPage() {
     const { user } = useUser();
     const { database } = useFirebase();
@@ -72,6 +82,7 @@ export default function TasksPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [sortOption, setSortOption] = useState<SortOption>('dueDateAsc');
     
     const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -111,12 +122,37 @@ export default function TasksPage() {
     const { groupedTasks, overallProgress } = useMemo(() => {
         const filtered = tasks.filter(task => task.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
+        const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+
         const grouped = taskCategories.map(category => {
             const categoryTasks = filtered.filter(task => task.category === category);
+            
+            const sortedTasks = [...categoryTasks].sort((a, b) => {
+                 if (a.completed !== b.completed) {
+                    return a.completed ? 1 : -1;
+                }
+                switch (sortOption) {
+                    case 'dueDateAsc':
+                        return (isValid(new Date(a.dueDate)) ? new Date(a.dueDate).getTime() : 0) - (isValid(new Date(b.dueDate)) ? new Date(b.dueDate).getTime() : 0);
+                    case 'dueDateDesc':
+                        return (isValid(new Date(b.dueDate)) ? new Date(b.dueDate).getTime() : 0) - (isValid(new Date(a.dueDate)) ? new Date(a.dueDate).getTime() : 0);
+                    case 'priorityDesc':
+                        return priorityOrder[a.priority] - priorityOrder[b.priority];
+                    case 'priorityAsc':
+                        return priorityOrder[b.priority] - priorityOrder[a.priority];
+                    case 'titleAsc':
+                        return a.title.localeCompare(b.title);
+                    case 'titleDesc':
+                        return b.title.localeCompare(a.title);
+                    default:
+                        return 0;
+                }
+            });
+
             const completedCount = categoryTasks.filter(t => t.completed).length;
             return {
                 name: category,
-                tasks: categoryTasks,
+                tasks: sortedTasks,
                 completedCount,
                 totalCount: categoryTasks.length
             };
@@ -127,7 +163,7 @@ export default function TasksPage() {
         const progress = totalTasks > 0 ? (completedTasksCount / totalTasks) * 100 : 0;
         
         return { groupedTasks: grouped, overallProgress: { completed: completedTasksCount, total: totalTasks, percentage: progress } };
-    }, [tasks, searchQuery]);
+    }, [tasks, searchQuery, sortOption]);
 
 
     const openTaskDialog = (task: Task | null) => {
@@ -220,9 +256,25 @@ export default function TasksPage() {
               </Link>
               <h2 className="text-[#181113] dark:text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center">Wedding Checklist</h2>
               <div className="flex w-12 items-center justify-end">
-                <button className="flex cursor-pointer items-center justify-center rounded-lg h-12 bg-transparent text-primary gap-2 text-base font-bold p-0">
-                  <span className="material-symbols-outlined">tune</span>
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex cursor-pointer items-center justify-center rounded-lg h-12 bg-transparent text-primary gap-2 text-base font-bold p-0">
+                      <span className="material-symbols-outlined">tune</span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
+                      <DropdownMenuRadioItem value="dueDateAsc">Due Date: Soonest</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="dueDateDesc">Due Date: Latest</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="priorityDesc">Priority: High to Low</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="priorityAsc">Priority: Low to High</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="titleAsc">Title: A-Z</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="titleDesc">Title: Z-A</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
             <div className="px-4 py-2">
@@ -272,7 +324,7 @@ export default function TasksPage() {
                         <span className="material-symbols-outlined text-[#89616b] transition-transform group-data-[state=open]:rotate-180">expand_more</span>
                       </AccordionTrigger>
                       <AccordionContent className="p-2 pt-0 space-y-1">
-                        {group.tasks.sort((a,b) => (a.completed ? 1 : -1) - (b.completed ? 1 : -1) || (isValid(new Date(a.dueDate)) ? new Date(a.dueDate).getTime() : 0) - (isValid(new Date(b.dueDate)) ? new Date(b.dueDate).getTime() : 0)).map(task => (
+                        {group.tasks.map(task => (
                            <div key={task.id} className="flex items-center gap-3 px-3 py-3 rounded-lg bg-white/50 dark:bg-white/5">
                               <div className="flex size-6 items-center justify-center" onClick={(e) => { e.stopPropagation(); toggleTaskCompletion(task);}}>
                                 <input
@@ -372,4 +424,3 @@ export default function TasksPage() {
         </div>
     );
 }
-
