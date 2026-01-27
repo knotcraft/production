@@ -43,4 +43,6 @@ export interface Task {
   dueDate: string;
   completed: boolean;
   notes?: string;
+  category: string;
+  priority: 'High' | 'Medium' | 'Low';
 }
