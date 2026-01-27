@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -56,6 +55,7 @@ export default function GuestsPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     
     const [activeGuest, setActiveGuest] = useState<Guest | null>(null);
+    const [guestToDelete, setGuestToDelete] = useState<Guest | null>(null);
 
     const [formState, setFormState] = useState<Partial<Guest>>({
         name: '', side: 'bride', status: 'pending', group: '', email: '', phone: '', notes: '', diet: 'none'
@@ -94,7 +94,7 @@ export default function GuestsPage() {
         let baseGuests = guests;
 
         if (sideFilter !== 'all') {
-            baseGuests = guests.filter(guest => guest.side === sideFilter || guest.side === 'both');
+            baseGuests = guests.filter(guest => guest.side === sideFilter);
         }
 
         const summaryData = {
@@ -102,8 +102,12 @@ export default function GuestsPage() {
             confirmed: baseGuests.filter(g => g.status === 'confirmed').length,
             pending: baseGuests.filter(g => g.status === 'pending').length,
         };
+        
+        let displayGuests = guests;
 
-        let displayGuests = baseGuests;
+        if (sideFilter !== 'all') {
+            displayGuests = displayGuests.filter(guest => guest.side === sideFilter);
+        }
 
         if (statusFilter !== 'all') {
             displayGuests = displayGuests.filter(g => g.status === statusFilter);
@@ -125,6 +129,11 @@ export default function GuestsPage() {
         setFormState(guest || { name: '', side: 'bride', status: 'pending', group: '', email: '', phone: '', notes: '', diet: 'none' });
         setIsGuestDialogOpen(true);
     };
+    
+    const handleCloseGuestDialog = () => {
+        setIsGuestDialogOpen(false);
+        setActiveGuest(null);
+    }
 
     const handleSaveGuest = async () => {
         if (!user || !database || !formState.name) {
@@ -146,28 +155,31 @@ export default function GuestsPage() {
                 await set(newGuestRef, guestData);
                 toast({ variant: 'success', title: 'Success', description: 'Guest added.' });
             }
-            setIsGuestDialogOpen(false);
-            setActiveGuest(null);
+            handleCloseGuestDialog();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message || 'Could not save guest.' });
         }
     };
     
     const openDeleteDialog = (guest: Guest) => {
-        setActiveGuest(guest);
+        setGuestToDelete(guest);
         setIsDeleteDialogOpen(true);
     };
+    
+    const handleCloseDeleteDialog = () => {
+        setIsDeleteDialogOpen(false);
+        setGuestToDelete(null);
+    }
 
     const handleConfirmDelete = async () => {
-        if (!user || !database || !activeGuest) return;
+        if (!user || !database || !guestToDelete) return;
         try {
-            await remove(ref(database, `users/${user.uid}/guests/${activeGuest.id}`));
+            await remove(ref(database, `users/${user.uid}/guests/${guestToDelete.id}`));
             toast({ variant: 'success', title: 'Success', description: 'Guest deleted.' });
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message || 'Could not delete guest.' });
         } finally {
-            setIsDeleteDialogOpen(false);
-            setActiveGuest(null);
+            handleCloseDeleteDialog();
         }
     };
     
@@ -263,7 +275,7 @@ export default function GuestsPage() {
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <>
             <header className="sticky top-0 z-20 flex flex-col bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center p-4 justify-between">
                     <Link href="/" className="text-[#181113] dark:text-white flex size-12 shrink-0 items-center">
@@ -304,18 +316,21 @@ export default function GuestsPage() {
                         <button onClick={() => setSideFilter('groom')} className={cn("flex-1 py-2.5 text-sm font-bold rounded-xl transition-all", sideFilter === 'groom' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm ring-1 ring-black/5' : 'text-[#89616b] dark:text-gray-400')}>Groom's</button>
                     </div>
                 </div>
-                <div className="flex flex-nowrap gap-3 px-4 pb-4 overflow-x-auto no-scrollbar">
-                    <div className="flex min-w-[120px] flex-1 flex-col gap-1 rounded-2xl p-4 border border-[#e6dbde] dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
-                        <p className="text-[#89616b] dark:text-gray-500 text-[10px] font-extrabold uppercase tracking-widest">Total Invited</p>
+                <div className="grid grid-cols-3 gap-3 px-4 pb-4">
+                    <div className="flex flex-col items-center justify-center gap-1 rounded-2xl p-3 border border-primary/20 bg-primary/5 dark:border-primary/30 dark:bg-primary/10 text-center">
+                        <span className="material-symbols-outlined text-primary text-3xl">groups</span>
                         <p className="text-primary tracking-tight text-2xl font-black leading-tight">{summary.total}</p>
+                        <p className="text-primary/80 text-[10px] font-extrabold uppercase tracking-widest">Invited</p>
                     </div>
-                    <div className="flex min-w-[120px] flex-1 flex-col gap-1 rounded-2xl p-4 border border-[#e6dbde] dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
-                        <p className="text-[#89616b] dark:text-gray-500 text-[10px] font-extrabold uppercase tracking-widest">Confirmed</p>
-                        <p className="text-green-600 tracking-tight text-2xl font-black leading-tight">{summary.confirmed}</p>
+                    <div className="flex flex-col items-center justify-center gap-1 rounded-2xl p-3 border border-green-500/20 bg-green-500/5 dark:border-green-500/30 dark:bg-green-500/10 text-center">
+                        <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-3xl">how_to_reg</span>
+                        <p className="text-green-600 dark:text-green-400 tracking-tight text-2xl font-black leading-tight">{summary.confirmed}</p>
+                        <p className="text-green-600/80 dark:text-green-400/80 text-[10px] font-extrabold uppercase tracking-widest">Confirmed</p>
                     </div>
-                    <div className="flex min-w-[120px] flex-1 flex-col gap-1 rounded-2xl p-4 border border-[#e6dbde] dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
-                        <p className="text-[#89616b] dark:text-gray-500 text-[10px] font-extrabold uppercase tracking-widest">Pending</p>
-                        <p className="text-gray-400 tracking-tight text-2xl font-black leading-tight">{summary.pending}</p>
+                    <div className="flex flex-col items-center justify-center gap-1 rounded-2xl p-3 border border-amber-500/20 bg-amber-500/5 dark:border-amber-500/30 dark:bg-amber-500/10 text-center">
+                        <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-3xl">hourglass_top</span>
+                        <p className="text-amber-600 dark:text-amber-400 tracking-tight text-2xl font-black leading-tight">{summary.pending}</p>
+                        <p className="text-amber-600/80 dark:text-amber-400/80 text-[10px] font-extrabold uppercase tracking-widest">Pending</p>
                     </div>
                 </div>
             </header>
@@ -339,7 +354,7 @@ export default function GuestsPage() {
                         <p className={cn("text-sm font-bold", statusFilter !== 'pending' && "text-[#181113] dark:text-gray-300")}>Pending</p>
                     </button>
                 </div>
-                <div className="flex-1 overflow-y-auto px-4">
+                <div className="flex-1 overflow-y-auto px-4 pb-32">
                     <div className="py-2 flex items-center justify-between">
                         <p className="text-[#89616b] text-[11px] font-black uppercase tracking-[0.15em]">Showing {filteredGuests.length} Guests</p>
                         <div className="flex items-center gap-1 text-primary text-[11px] font-extrabold">
@@ -431,7 +446,7 @@ export default function GuestsPage() {
                 </button>
             </div>
             
-             <Dialog open={isGuestDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setActiveGuest(null); setIsGuestDialogOpen(isOpen); }}>
+             <Dialog open={isGuestDialogOpen} onOpenChange={handleCloseGuestDialog}>
                 <DialogContent className="sm:max-w-[425px] grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]">
                     <DialogHeader className="p-6 pb-0">
                         <DialogTitle>{activeGuest ? 'Edit' : 'Add'} Guest</DialogTitle>
@@ -489,20 +504,20 @@ export default function GuestsPage() {
                 </DialogContent>
             </Dialog>
 
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setActiveGuest(null); setIsDeleteDialogOpen(isOpen); }}>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={handleCloseDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the guest "{activeGuest?.name}".
+                            This action cannot be undone. This will permanently delete the guest "{guestToDelete?.name}".
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel onClick={handleCloseDeleteDialog}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </>
     );
 }
