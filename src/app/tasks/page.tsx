@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirebase } from '@/firebase';
-import { ref, onValue, set, push, update } from 'firebase/database';
+import { ref, onValue, set, push, update, remove } from 'firebase/database';
 import type { Task } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Accordion,
   AccordionContent,
@@ -61,6 +71,8 @@ export default function TasksPage() {
     const [searchQuery, setSearchQuery] = useState('');
     
     const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
     
     const [formState, setFormState] = useState<Partial<Task>>({
         title: '',
@@ -152,6 +164,23 @@ export default function TasksPage() {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not update task status.' });
         }
     };
+
+    const openDeleteDialog = (task: Task) => {
+      setTaskToDelete(task);
+      setIsDeleteDialogOpen(true);
+    };
+
+    const handleDeleteTask = async () => {
+        if (!user || !database || !taskToDelete) return;
+        try {
+            await remove(ref(database, `users/${user.uid}/tasks/${taskToDelete.id}`));
+            toast({ variant: 'success', title: 'Success', description: 'Task deleted.' });
+            setIsDeleteDialogOpen(false);
+            setTaskToDelete(null);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: e.message || 'Could not delete task.' });
+        }
+    };
     
     if (loading) {
       return (
@@ -237,6 +266,9 @@ export default function TasksPage() {
                                 <p className="text-[#89616b] text-[11px]">Due: {format(parseISO(task.dueDate), 'MMM dd')} • {task.priority} Priority</p>
                               </div>
                               <span className={cn("material-symbols-outlined text-[20px]", priorityMap[task.priority].color)} style={{fontVariationSettings: `'FILL' ${priorityMap[task.priority].iconFill}`}}>flag</span>
+                              <button onClick={(e) => { e.stopPropagation(); openDeleteDialog(task); }} className="opacity-0 group-hover/task:opacity-100 text-destructive/70 hover:text-destructive transition-opacity mr-2">
+                                  <Trash2 className="h-4 w-4" />
+                              </button>
                             </div>
                         ))}
                       </AccordionContent>
@@ -292,6 +324,21 @@ export default function TasksPage() {
                   </DialogFooter>
               </DialogContent>
           </Dialog>
+
+          <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete the "{taskToDelete?.title}" task. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteTask} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
     );
 }
