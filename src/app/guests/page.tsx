@@ -263,7 +263,7 @@ export default function GuestsPage() {
     }
 
     return (
-        <div className="relative flex h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto bg-white dark:bg-background-dark shadow-xl">
+        <>
             <header className="sticky top-0 z-20 flex flex-col bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center p-4 justify-between">
                     <Link href="/" className="text-[#181113] dark:text-white flex size-12 shrink-0 items-center">
@@ -319,7 +319,7 @@ export default function GuestsPage() {
                     </div>
                 </div>
             </header>
-            <main className="flex-1 bg-slate-50 dark:bg-background-dark/40">
+            <main className="flex-1 flex flex-col bg-slate-50 dark:bg-background-dark/40">
                 <div className="px-4 py-4">
                     <div className="flex w-full items-stretch rounded-2xl h-12 bg-white dark:bg-gray-900 ring-1 ring-inset ring-gray-100 dark:ring-gray-800">
                         <div className="text-[#89616b] flex items-center justify-center pl-4">
@@ -339,7 +339,7 @@ export default function GuestsPage() {
                         <p className={cn("text-sm font-bold", statusFilter !== 'pending' && "text-[#181113] dark:text-gray-300")}>Pending</p>
                     </button>
                 </div>
-                <div className="flex-1 overflow-y-auto px-4 pb-32">
+                <div className="flex-1 overflow-y-auto px-4">
                     <div className="py-2 flex items-center justify-between">
                         <p className="text-[#89616b] text-[11px] font-black uppercase tracking-[0.15em]">Showing {filteredGuests.length} Guests</p>
                         <div className="flex items-center gap-1 text-primary text-[11px] font-extrabold">
@@ -507,6 +507,7 @@ export default function GuestsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </>
     );
-}
+
+    
