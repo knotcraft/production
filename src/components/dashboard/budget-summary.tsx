@@ -1,12 +1,10 @@
 'use client';
-import { Progress } from '@/components/ui/progress';
 import { useFirebase, useUser } from '@/firebase';
 import { ref, onValue } from 'firebase/database';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Wallet } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Wallet, Pencil } from 'lucide-react';
 
 type BudgetData = {
     total: number;
@@ -45,9 +43,9 @@ export function BudgetSummary() {
   }, [user, database]);
   
   const { spent, total } = budget;
-  const percentage = total > 0 ? Math.round((spent / total) * 100) : 0;
-  const isOverBudget = percentage > 100;
-  const circumference = 2 * Math.PI * 40; // 2 * pi * r
+  const remainingBudget = total - spent;
+  const budgetPercentage = total > 0 ? (spent / total) * 100 : 0;
+  const isOverBudget = budgetPercentage > 100;
 
   if (total <= 0) {
     return (
@@ -67,40 +65,39 @@ export function BudgetSummary() {
   }
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-card p-6 shadow-lg dark:bg-card/50">
-        <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold">Budget Progress</h3>
-            <span className={cn(
-                "text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                isOverBudget 
-                    ? 'bg-destructive/10 text-destructive' 
-                    : 'bg-primary/10 text-primary'
-            )}>
-              {isOverBudget ? 'Over Budget' : 'On Track'}
-            </span>
-        </div>
-        <div className="flex items-center gap-6">
-            <div className="relative flex h-24 w-24 items-center justify-center">
-                <svg className="h-full w-full -rotate-90 transform">
-                    <circle className="stroke-secondary" cx="48" cy="48" r="40" fill="transparent" strokeWidth="8"></circle>
-                    <circle
-                        className={cn(isOverBudget ? "text-destructive" : "text-primary")}
-                        cx="48" cy="48" r="40" fill="transparent" stroke="currentColor" strokeWidth="8"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={circumference - (Math.min(percentage, 100) / 100) * circumference}
-                        strokeLinecap="round"
-                    />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold">{percentage}%</span>
-                </div>
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-pink-500 to-rose-500 p-6 text-white shadow-lg dark:from-primary/80 dark:via-pink-500/80 dark:to-rose-500/80">
+        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10" />
+        <div className="absolute -left-12 -bottom-12 h-32 w-32 rounded-full bg-white/10" />
+
+        <div className="relative z-10">
+            <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm font-medium uppercase tracking-widest text-white/80">Remaining Budget</p>
+                <Link href="/budget" passHref>
+                    <Button variant="ghost" size="icon" className="-mr-2 rounded-full text-white/80 hover:bg-white/20 hover:text-white">
+                        <Pencil className="h-5 w-5" />
+                    </Button>
+                </Link>
             </div>
-            <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground">Spent vs. Remaining</p>
-                <p className="text-xl font-bold">
-                    ₹{spent.toLocaleString('en-IN')} / {total > 0 ? `₹${total.toLocaleString('en-IN', { notation: 'compact', compactDisplay: 'short' })}` : '₹0'}
-                </p>
-                <Progress value={percentage} className={cn("mt-2 h-1.5", isOverBudget && "[&>div]:bg-destructive")} />
+            <h1 className="mb-6 text-4xl font-bold tracking-tight">
+                ₹{remainingBudget.toLocaleString('en-IN')}
+            </h1>
+
+            <div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/30">
+                    <div
+                    className="h-full rounded-full bg-white transition-all duration-500"
+                    style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                    />
+                </div>
+                <div className="mt-2 flex justify-between text-xs font-semibold text-white/90">
+                    <span>Spent: ₹{spent.toLocaleString('en-IN')}</span>
+                    <span>Total: ₹{total.toLocaleString('en-IN')}</span>
+                </div>
+                {isOverBudget && (
+                    <p className="mt-2 text-right text-xs font-bold text-yellow-300">
+                    You've gone over budget by ₹{(spent - total).toLocaleString('en-IN')}!
+                    </p>
+                )}
             </div>
         </div>
     </div>
