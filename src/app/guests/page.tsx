@@ -467,10 +467,10 @@ export default function GuestsPage() {
                     )}
                 </div>
             </main>
-            <div className="fixed bottom-24 right-6 z-30">
-                <button onClick={() => openGuestDialog(null)} className="flex size-14 items-center justify-center rounded-2xl bg-primary text-white shadow-xl shadow-primary/40 active:scale-90 transition-transform ring-4 ring-white dark:ring-background-dark">
-                    <span className="material-symbols-outlined text-3xl font-bold">add</span>
-                </button>
+            <div className="fixed bottom-28 right-6 z-30">
+                <Button onClick={() => openGuestDialog(null)} className="w-14 h-14 rounded-full shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform">
+                    <span className="material-symbols-outlined text-3xl">add</span>
+                </Button>
             </div>
             
              <Dialog open={isGuestDialogOpen} onOpenChange={handleCloseGuestDialog}>
