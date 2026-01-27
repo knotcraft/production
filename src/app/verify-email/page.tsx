@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useFirebase } from '@/firebase';
 import { sendEmailVerification } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, MailCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -16,6 +16,25 @@ export default function VerifyEmailPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get('email');
+
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            if (auth?.currentUser) {
+                await auth.currentUser.reload();
+                if (auth.currentUser.emailVerified) {
+                    clearInterval(interval);
+                    toast({
+                        variant: 'success',
+                        title: 'Email Verified!',
+                        description: "You're all set. Welcome to your dashboard!",
+                    });
+                    router.push('/');
+                }
+            }
+        }, 3000); // Check every 3 seconds
+
+        return () => clearInterval(interval);
+    }, [auth, router, toast]);
 
     const handleResendVerification = async () => {
         if (!auth?.currentUser) {
