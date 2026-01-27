@@ -201,6 +201,41 @@ export default function GuestsPage() {
         document.body.removeChild(link);
     };
 
+    const handleDownloadGuestList = () => {
+        if (guests.length === 0) {
+            toast({ variant: 'default', title: 'Guest List Empty', description: 'There are no guests to download.' });
+            return;
+        }
+
+        const headers = ['name', 'side', 'status', 'group', 'email', 'phone', 'notes', 'diet'];
+        
+        const escapeCsvValue = (value: any) => {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            const stringValue = String(value);
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        };
+
+        const csvRows = guests.map(guest => 
+            headers.map(header => escapeCsvValue(guest[header as keyof Guest])).join(',')
+        );
+
+        const csvContent = [headers.join(','), ...csvRows].join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "guest_list.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const handleUploadClick = () => {
         fileInputRef.current?.click();
     };
@@ -293,11 +328,15 @@ export default function GuestsPage() {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onSelect={handleUploadClick}>
                                     <Upload className="mr-2 h-4 w-4" />
-                                    <span>Upload CSV</span>
+                                    <span>Import from CSV</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={handleDownloadGuestList}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Export to CSV</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={handleDownloadTemplate}>
                                     <Download className="mr-2 h-4 w-4" />
-                                    <span>Download Template</span>
+                                    <span>Download CSV Template</span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
