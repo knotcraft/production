@@ -42,6 +42,7 @@ export default function ForgotPasswordPage() {
         try {
             await sendPasswordResetEmail(auth, values.email);
             toast({
+                variant: 'success',
                 title: 'Password Reset Email Sent',
                 description: 'Check your email for a link to reset your password.',
             });

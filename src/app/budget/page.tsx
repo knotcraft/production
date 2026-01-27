@@ -122,7 +122,7 @@ export default function BudgetPage() {
     }
     try {
       await set(ref(database, `users/${user.uid}/budget/total`), newTotal);
-      toast({ title: 'Success', description: 'Total budget updated.' });
+      toast({ variant: 'success', title: 'Success', description: 'Total budget updated.' });
       setIsEditTotalBudgetOpen(false);
     } catch (e) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not update total budget.' });
@@ -160,12 +160,12 @@ export default function BudgetPage() {
       if (activeCategory) { // Editing existing category
         const categoryRef = ref(database, `users/${user.uid}/budget/categories/${activeCategory.id}`);
         await update(categoryRef, categoryData);
-        toast({ title: 'Success', description: 'Category updated.' });
+        toast({ variant: 'success', title: 'Success', description: 'Category updated.' });
       } else { // Adding new category
         const categoriesRef = ref(database, `users/${user.uid}/budget/categories`);
         const newCategoryRef = push(categoriesRef);
         await set(newCategoryRef, categoryData);
-        toast({ title: 'Success', description: 'Category added.' });
+        toast({ variant: 'success', title: 'Success', description: 'Category added.' });
       }
       setIsCategoryDialogOpen(false);
       setActiveCategory(null);
@@ -183,7 +183,7 @@ export default function BudgetPage() {
     if (!user || !database || !activeCategory) return;
     try {
       await remove(ref(database, `users/${user.uid}/budget/categories/${activeCategory.id}`));
-      toast({ title: 'Success', description: 'Category deleted.' });
+      toast({ variant: 'success', title: 'Success', description: 'Category deleted.' });
       setIsDeleteDialogOpen(false);
       setActiveCategory(null);
     } catch (e) {
@@ -216,12 +216,12 @@ export default function BudgetPage() {
       if (activeExpense) { // Editing
         const expenseRef = ref(database, `users/${user.uid}/budget/categories/${activeCategory.id}/expenses/${activeExpense.id}`);
         await update(expenseRef, expenseData);
-        toast({ title: 'Success', description: 'Expense updated.' });
+        toast({ variant: 'success', title: 'Success', description: 'Expense updated.' });
       } else { // Adding
         const expensesRef = ref(database, `users/${user.uid}/budget/categories/${activeCategory.id}/expenses`);
         const newExpenseRef = push(expensesRef);
         await set(newExpenseRef, expenseData);
-        toast({ title: 'Success', description: 'Expense added.' });
+        toast({ variant: 'success', title: 'Success', description: 'Expense added.' });
       }
 
       setIsExpenseDialogOpen(false);
@@ -236,7 +236,7 @@ export default function BudgetPage() {
     if (!user || !database) return;
     try {
       await remove(ref(database, `users/${user.uid}/budget/categories/${categoryId}/expenses/${expenseId}`));
-      toast({ title: 'Success', description: 'Expense deleted.' });
+      toast({ variant: 'success', title: 'Success', description: 'Expense deleted.' });
     } catch(e) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete expense.' });
     }

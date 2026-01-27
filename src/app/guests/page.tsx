@@ -46,8 +46,7 @@ export default function GuestsPage() {
     
     const [isGuestDialogOpen, setIsGuestDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [guestToEdit, setGuestToEdit] = useState<Guest | null>(null);
-    const [guestToDelete, setGuestToDelete] = useState<Guest | null>(null);
+    const [activeGuest, setActiveGuest] = useState<Guest | null>(null);
 
     const [formState, setFormState] = useState<Partial<Guest>>({
         name: '', side: 'bride', status: 'pending', group: '', email: '', phone: '', notes: '', diet: 'none'
@@ -113,7 +112,7 @@ export default function GuestsPage() {
 
 
     const openGuestDialog = (guest: Guest | null) => {
-        setGuestToEdit(guest);
+        setActiveGuest(guest);
         setFormState(guest || { name: '', side: 'bride', status: 'pending', group: '', email: '', phone: '', notes: '', diet: 'none' });
         setIsGuestDialogOpen(true);
     };
@@ -128,36 +127,38 @@ export default function GuestsPage() {
         delete guestData.id;
 
         try {
-            if (guestToEdit?.id) {
-                const guestRef = ref(database, `users/${user.uid}/guests/${guestToEdit.id}`);
+            if (activeGuest?.id) {
+                const guestRef = ref(database, `users/${user.uid}/guests/${activeGuest.id}`);
                 await update(guestRef, guestData);
-                toast({ title: 'Success', description: 'Guest updated.' });
+                toast({ variant: 'success', title: 'Success', description: 'Guest updated.' });
             } else {
                 const guestsRef = ref(database, `users/${user.uid}/guests`);
                 const newGuestRef = push(guestsRef);
                 await set(newGuestRef, guestData);
-                toast({ title: 'Success', description: 'Guest added.' });
+                toast({ variant: 'success', title: 'Success', description: 'Guest added.' });
             }
             setIsGuestDialogOpen(false);
+            setActiveGuest(null);
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message || 'Could not save guest.' });
         }
     };
     
     const openDeleteDialog = (guest: Guest) => {
-        setGuestToDelete(guest);
+        setActiveGuest(guest);
         setIsDeleteDialogOpen(true);
     };
 
     const handleConfirmDelete = async () => {
-        if (!user || !database || !guestToDelete) return;
+        if (!user || !database || !activeGuest) return;
         try {
-            await remove(ref(database, `users/${user.uid}/guests/${guestToDelete.id}`));
-            toast({ title: 'Success', description: 'Guest deleted.' });
+            await remove(ref(database, `users/${user.uid}/guests/${activeGuest.id}`));
+            toast({ variant: 'success', title: 'Success', description: 'Guest deleted.' });
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message || 'Could not delete guest.' });
         } finally {
             setIsDeleteDialogOpen(false);
+            setActiveGuest(null);
         }
     };
     
@@ -235,7 +236,7 @@ export default function GuestsPage() {
                     if(newGuestKey) updates[newGuestKey] = guest;
                 });
                 await update(ref(database, `users/${user.uid}/guests`), updates);
-                toast({ title: 'Upload Successful', description: `${guestsToUpload.length} guests imported.` });
+                toast({ variant: 'success', title: 'Upload Successful', description: `${guestsToUpload.length} guests imported.` });
             } catch (e) {
                 toast({ variant: 'destructive', title: 'Upload Failed', description: 'An error occurred during upload.' });
             }
@@ -424,7 +425,7 @@ export default function GuestsPage() {
              <Dialog open={isGuestDialogOpen} onOpenChange={setIsGuestDialogOpen}>
                 <DialogContent className="sm:max-w-[425px] grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]">
                     <DialogHeader className="p-6 pb-0">
-                        <DialogTitle>{guestToEdit ? 'Edit' : 'Add'} Guest</DialogTitle>
+                        <DialogTitle>{activeGuest ? 'Edit' : 'Add'} Guest</DialogTitle>
                     </DialogHeader>
                     <ScrollArea className="h-full">
                       <div className="grid gap-4 py-4 px-6">
@@ -485,7 +486,7 @@ export default function GuestsPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the guest "{guestToDelete?.name}".
+                            This action cannot be undone. This will permanently delete the guest "{activeGuest?.name}".
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

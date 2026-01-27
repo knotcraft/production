@@ -83,6 +83,7 @@ export default function PersonalizePage() {
         });
 
         toast({
+            variant: "success",
             title: "Details Saved!",
             description: "Your wedding plan is ready.",
         });
