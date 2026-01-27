@@ -326,11 +326,11 @@ export default function GuestsPage() {
                             <div className="relative z-10">
                                 <div className="mb-2 flex items-center justify-between">
                                     <p className="text-sm font-medium uppercase tracking-widest text-white/80">
-                                        Pending Responses
+                                        Confirmed Guests
                                     </p>
                                 </div>
                                 <h1 className="mb-6 text-4xl font-bold tracking-tight">
-                                    {summary.pending}
+                                    {summary.confirmed}
                                 </h1>
 
                                 <div>
@@ -341,7 +341,7 @@ export default function GuestsPage() {
                                         />
                                     </div>
                                     <div className="mt-2 flex justify-between text-xs font-semibold text-white/90">
-                                        <span>Confirmed: {summary.confirmed}</span>
+                                        <span>Pending: {summary.pending}</span>
                                         <span>Total: {summary.total}</span>
                                     </div>
                                 </div>
