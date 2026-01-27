@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useUser, useFirebase } from '@/firebase';
 import { ref, onValue, set, push, update, remove } from 'firebase/database';
 import type { Task } from '@/lib/types';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, Pencil } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ import {
 } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -41,7 +43,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 
 const taskCategories = [
   '12+ Months Out',
@@ -51,6 +53,7 @@ const taskCategories = [
   '1-3 Months Out',
   'Week Of',
   'Day Of',
+  'Post-Wedding',
 ];
 
 const priorities: Task['priority'][] = ['High', 'Medium', 'Low'];
@@ -73,6 +76,7 @@ export default function TasksPage() {
     const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+    const [activeTask, setActiveTask] = useState<Task | null>(null);
     
     const [formState, setFormState] = useState<Partial<Task>>({
         title: '',
@@ -126,15 +130,20 @@ export default function TasksPage() {
     }, [tasks, searchQuery]);
 
 
-    const openTaskDialog = () => {
-        setFormState({ 
-            title: '', 
-            dueDate: new Date().toISOString().split('T')[0], 
-            notes: '', 
-            completed: false,
-            category: taskCategories[0],
-            priority: 'Medium'
-        });
+    const openTaskDialog = (task: Task | null) => {
+        setActiveTask(task);
+        if (task) {
+            setFormState(task);
+        } else {
+            setFormState({ 
+                title: '', 
+                dueDate: new Date().toISOString().split('T')[0], 
+                notes: '', 
+                completed: false,
+                category: taskCategories[0],
+                priority: 'Medium'
+            });
+        }
         setIsTaskDialogOpen(true);
     };
 
@@ -143,14 +152,26 @@ export default function TasksPage() {
             toast({ variant: 'destructive', title: 'Invalid input', description: 'Please fill out all required fields.' });
             return;
         }
-
-        const taskData = { ...formState, completed: formState.completed || false };
-        delete taskData.id;
+    
+        const taskData = {
+            title: formState.title,
+            dueDate: formState.dueDate,
+            notes: formState.notes || '',
+            completed: formState.completed || false,
+            category: formState.category,
+            priority: formState.priority,
+        };
 
         try {
-            await set(push(ref(database, `users/${user.uid}/tasks`)), taskData);
-            toast({ variant: 'success', title: 'Success', description: 'Task added.' });
+            if (activeTask) {
+                await update(ref(database, `users/${user.uid}/tasks/${activeTask.id}`), taskData);
+                toast({ variant: 'success', title: 'Success', description: 'Task updated.' });
+            } else {
+                await set(push(ref(database, `users/${user.uid}/tasks`)), taskData);
+                toast({ variant: 'success', title: 'Success', description: 'Task added.' });
+            }
             setIsTaskDialogOpen(false);
+            setActiveTask(null);
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error', description: e.message || 'Could not save task.' });
         }
@@ -251,8 +272,8 @@ export default function TasksPage() {
                         <span className="material-symbols-outlined text-[#89616b] transition-transform group-data-[state=open]:rotate-180">expand_more</span>
                       </AccordionTrigger>
                       <AccordionContent className="p-2 pt-0 space-y-1">
-                        {group.tasks.sort((a,b) => (a.completed ? 1 : -1) - (b.completed ? 1 : -1) || new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).map(task => (
-                           <div key={task.id} className="flex items-center gap-3 px-3 py-3 rounded-lg bg-white/50 dark:bg-white/5 group/task">
+                        {group.tasks.sort((a,b) => (a.completed ? 1 : -1) - (b.completed ? 1 : -1) || (isValid(new Date(a.dueDate)) ? new Date(a.dueDate).getTime() : 0) - (isValid(new Date(b.dueDate)) ? new Date(b.dueDate).getTime() : 0)).map(task => (
+                           <div key={task.id} className="flex items-center gap-3 px-3 py-3 rounded-lg bg-white/50 dark:bg-white/5">
                               <div className="flex size-6 items-center justify-center" onClick={(e) => { e.stopPropagation(); toggleTaskCompletion(task);}}>
                                 <input
                                   type="checkbox"
@@ -263,12 +284,17 @@ export default function TasksPage() {
                               </div>
                               <div className={cn("flex flex-col flex-1", task.completed && "checked-task")}>
                                 <p className="text-[#181113] dark:text-white text-sm font-semibold">{task.title}</p>
-                                <p className="text-[#89616b] text-[11px]">Due: {format(parseISO(task.dueDate), 'MMM dd')} • {task.priority} Priority</p>
+                                <p className="text-[#89616b] text-[11px]">Due: {isValid(parseISO(task.dueDate)) ? format(parseISO(task.dueDate), 'MMM dd') : 'Invalid Date'} • {task.priority} Priority</p>
                               </div>
                               <span className={cn("material-symbols-outlined text-[20px]", priorityMap[task.priority].color)} style={{fontVariationSettings: `'FILL' ${priorityMap[task.priority].iconFill}`}}>flag</span>
-                              <button onClick={(e) => { e.stopPropagation(); openDeleteDialog(task); }} className="opacity-0 group-hover/task:opacity-100 text-destructive/70 hover:text-destructive transition-opacity mr-2">
-                                  <Trash2 className="h-4 w-4" />
-                              </button>
+                               <div className="flex items-center gap-1 ml-auto">
+                                <button onClick={(e) => { e.stopPropagation(); openTaskDialog(task); }} className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors p-1 rounded-md">
+                                    <Pencil className="h-4 w-4" />
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); openDeleteDialog(task); }} className="text-destructive/70 hover:text-destructive transition-colors p-1 rounded-md">
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
                         ))}
                       </AccordionContent>
@@ -278,14 +304,14 @@ export default function TasksPage() {
              )}
           </main>
           
-          <button onClick={() => openTaskDialog()} className="fixed bottom-28 right-6 flex items-center justify-center size-14 bg-primary text-white rounded-full shadow-lg shadow-primary/30 z-30 active:scale-95 transition-transform">
+          <button onClick={() => openTaskDialog(null)} className="fixed bottom-28 right-6 flex items-center justify-center size-14 bg-primary text-white rounded-full shadow-lg shadow-primary/30 z-30 active:scale-95 transition-transform">
             <span className="material-symbols-outlined text-3xl">add</span>
           </button>
             
           <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
               <DialogContent>
                   <DialogHeader>
-                      <DialogTitle>Add Task</DialogTitle>
+                      <DialogTitle>{activeTask ? 'Edit' : 'Add'} Task</DialogTitle>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                       <div className="space-y-2">
@@ -306,6 +332,10 @@ export default function TasksPage() {
                               </SelectContent>
                           </Select>
                         </div>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="notes">Notes</Label>
+                          <Textarea id="notes" value={formState.notes || ''} onChange={(e) => setFormState(p => ({...p, notes: e.target.value}))} placeholder="e.g. Call them to confirm booking..." />
                       </div>
                       <div className="space-y-2">
                         <Label>Priority</Label>
@@ -342,3 +372,4 @@ export default function TasksPage() {
         </div>
     );
 }
+
