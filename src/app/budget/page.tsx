@@ -298,10 +298,10 @@ export default function BudgetPage() {
 
                     <div className="relative z-10">
                         <div className="mb-2 flex items-center justify-between">
-                            <p className="text-sm font-medium uppercase tracking-widest text-white/80">Remaining Budget</p>
+                            <p className="text-sm font-medium uppercase tracking-widest text-white/80">Total Spent</p>
                         </div>
                         <h1 className="mb-6 text-4xl font-bold tracking-tight">
-                            ₹{remainingBudget.toLocaleString('en-IN')}
+                            ₹{totalSpent.toLocaleString('en-IN')}
                         </h1>
 
                         <div>
@@ -312,7 +312,7 @@ export default function BudgetPage() {
                                 />
                             </div>
                             <div className="mt-2 flex justify-between text-xs font-semibold text-white/90">
-                                <span>Spent: ₹{totalSpent.toLocaleString('en-IN')}</span>
+                                <span>Remaining: ₹{remainingBudget.toLocaleString('en-IN')}</span>
                                 <span>Total: ₹{totalAllocated.toLocaleString('en-IN')}</span>
                             </div>
                             {budgetPercentage > 100 && (

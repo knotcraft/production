@@ -101,7 +101,7 @@ export function BudgetSummary() {
 
         <div className="relative z-10">
             <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-medium uppercase tracking-widest text-white/80">Remaining Budget</p>
+                <p className="text-sm font-medium uppercase tracking-widest text-white/80">Total Spent</p>
                 <Link href="/budget" passHref>
                     <Button variant="ghost" size="icon" className="-mr-2 rounded-full text-white/80 hover:bg-white/20 hover:text-white">
                         <Pencil className="h-5 w-5" />
@@ -109,7 +109,7 @@ export function BudgetSummary() {
                 </Link>
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight">
-                ₹{remainingBudget.toLocaleString('en-IN')}
+                ₹{spent.toLocaleString('en-IN')}
             </h1>
 
             <div>
@@ -120,7 +120,7 @@ export function BudgetSummary() {
                     />
                 </div>
                 <div className="mt-2 flex justify-between text-xs font-semibold text-white/90">
-                    <span>Spent: ₹{spent.toLocaleString('en-IN')}</span>
+                    <span>Remaining: ₹{remainingBudget.toLocaleString('en-IN')}</span>
                     <span>Total: ₹{total.toLocaleString('en-IN')}</span>
                 </div>
                 {isOverBudget && (
