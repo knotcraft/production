@@ -5,14 +5,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirebase } from '@/firebase';
-import { ref, onValue, update } from 'firebase/database';
+import { ref, onValue, update, remove } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Bell, CalendarClock, CheckCheck, Users } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Bell, CalendarClock, CheckCheck, Users, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Notification } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 function NotificationSkeleton() {
     return (
@@ -34,10 +36,12 @@ export default function NotificationsPage() {
     const { user, loading: userLoading } = useUser();
     const { database } = useFirebase();
     const router = useRouter();
+    const { toast } = useToast();
 
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
+    const [isClearAllAlertOpen, setIsClearAllAlertOpen] = useState(false);
 
     useEffect(() => {
         if (user && database) {
@@ -79,6 +83,39 @@ export default function NotificationsPage() {
         });
         update(ref(database), updates);
     };
+    
+    const handleDeleteNotification = (notificationId: string) => {
+        if (!user || !database) return;
+        remove(ref(database, `notifications/${user.uid}/${notificationId}`))
+            .catch((error) => {
+                toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: error.message || 'Could not delete notification.',
+                });
+            });
+    };
+
+    const handleClearAllNotifications = () => {
+        if (!user || !database) return;
+        remove(ref(database, `notifications/${user.uid}`))
+            .then(() => {
+                toast({
+                    variant: 'success',
+                    title: 'Notifications Cleared',
+                    description: 'All your notifications have been deleted.',
+                });
+            })
+            .catch((error) => {
+                toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: error.message || 'Could not clear notifications.',
+                });
+            });
+        setIsClearAllAlertOpen(false);
+    };
+
 
     const filteredNotifications = notifications.filter(n => {
         if (filter === 'all') return true;
@@ -108,11 +145,17 @@ export default function NotificationsPage() {
                         <ArrowLeft className="h-5 w-5" />
                     </Link>
                     <h1 className="text-lg font-bold text-center flex-1">Notifications</h1>
-                    <div className="flex w-20 items-center justify-end">
+                    <div className="flex items-center justify-end gap-2">
                         {unreadCount > 0 && (
                             <Button variant="link" size="sm" onClick={handleMarkAllRead} className="text-xs p-1 h-auto text-primary">
                                 <CheckCheck className="mr-1 h-3 w-3" />
                                 Read All
+                            </Button>
+                        )}
+                        {notifications.length > 0 && (
+                            <Button variant="link" size="sm" onClick={() => setIsClearAllAlertOpen(true)} className="text-xs p-1 h-auto text-destructive">
+                                <Trash2 className="mr-1 h-3 w-3" />
+                                Clear All
                             </Button>
                         )}
                     </div>
@@ -134,27 +177,40 @@ export default function NotificationsPage() {
                 ) : filteredNotifications.length > 0 ? (
                     <div className="p-4 space-y-3">
                         {filteredNotifications.map(notif => (
-                            <button
-                                key={notif.id}
-                                onClick={() => handleNotificationClick(notif)}
-                                className={cn(
-                                    "relative flex items-start gap-4 rounded-xl p-4 text-left w-full transition-colors bg-card shadow-sm border",
-                                    !notif.read && "bg-primary/5 border-primary/20"
-                                )}
-                            >
-                                {!notif.read && <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-primary" />}
-                                <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary shrink-0">
-                                    <NotificationIcon type={notif.type} />
-                                </div>
-                                <div className="flex-1">
-                                    <p className={cn("text-sm", !notif.read ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
-                                        {notif.message}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground/80 mt-1">
-                                        {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
-                                    </p>
-                                </div>
-                            </button>
+                             <div key={notif.id} className="relative group">
+                                <button
+                                    onClick={() => handleNotificationClick(notif)}
+                                    className={cn(
+                                        "flex items-start gap-4 rounded-xl p-4 text-left w-full transition-colors bg-card shadow-sm border",
+                                        !notif.read && "bg-primary/5 border-primary/20"
+                                    )}
+                                >
+                                    {!notif.read && <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-primary group-hover:hidden" />}
+                                    <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary shrink-0">
+                                        <NotificationIcon type={notif.type} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className={cn("text-sm pr-8", !notif.read ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
+                                            {notif.message}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground/80 mt-1">
+                                            {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
+                                        </p>
+                                    </div>
+                                </button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute top-1/2 -translate-y-1/2 right-2 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteNotification(notif.id);
+                                    }}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">Delete notification</span>
+                                </Button>
+                            </div>
                         ))}
                     </div>
                 ) : (
@@ -165,6 +221,22 @@ export default function NotificationsPage() {
                     </div>
                 )}
             </main>
+             <AlertDialog open={isClearAllAlertOpen} onOpenChange={setIsClearAllAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete all of your notifications. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearAllNotifications} className="bg-destructive hover:bg-destructive/90">
+                            Clear All
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
