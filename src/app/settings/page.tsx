@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Trash2, Upload, LogOut, User, Image as ImageIcon, Sparkles, AlertTriangle, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Trash2, Upload, LogOut, User, Image as ImageIcon, Sparkles, AlertTriangle, Calendar as CalendarIcon, Link as LinkIcon } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -351,6 +351,21 @@ export default function SettingsPage() {
             </div>
         </div>
 
+        {/* Partner Sync Section */}
+        <div className="space-y-3">
+          <h3 className="font-bold px-2 flex items-center gap-2 text-foreground">
+            <LinkIcon className="text-primary h-5 w-5" />
+            Partner Sync
+          </h3>
+          <div className="space-y-4 rounded-xl border bg-card p-4">
+              <p className="text-sm text-muted-foreground">Share your dashboard, tasks, and guest list with your partner by linking your accounts.</p>
+              <Button variant="outline" className="w-full" onClick={() => toast({title: "Coming Soon!", description: "This feature is under development."})}>
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Link with Partner
+            </Button>
+          </div>
+        </div>
+
         {/* Account Section */}
          <div className="space-y-3">
           <h3 className="font-bold px-2 flex items-center gap-2 text-foreground">
@@ -412,3 +427,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
