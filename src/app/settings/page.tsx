@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, useFirebase } from '@/firebase';
-import { ref, get, update, remove, onValue, push } from 'firebase/database';
+import { ref, get, update, remove, onValue, push, set } from 'firebase/database';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -230,8 +230,8 @@ export default function SettingsPage() {
         const invRef = push(ref(database, 'invitations'));
         await set(invRef, { fromUid: user.uid, fromName: formData.name });
         setInvitationCode(invRef.key!);
-    } catch(e) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not generate invitation code.'})
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'Error generating code', description: e.message || 'Could not generate invitation code.'})
     } finally {
         setGeneratingCode(false);
     }
