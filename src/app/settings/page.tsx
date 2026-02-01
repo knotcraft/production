@@ -257,7 +257,17 @@ export default function SettingsPage() {
         const partnerData = partnerDataSnap.val() || {};
         const myData = myDataSnap.val() || {};
         
-        const mergedTasks = { ...(partnerData.tasks || {}), ...(myData.tasks || {}) };
+        const addOwner = (tasks: Record<string, any> | undefined, ownerId: string) => {
+            if (!tasks) return {};
+            return Object.fromEntries(
+                Object.entries(tasks).map(([key, task]) => [key, { ...task, owner: task.owner || ownerId }])
+            );
+        };
+
+        const myTasksWithOwners = addOwner(myData.tasks, user.uid);
+        const partnerTasksWithOwners = addOwner(partnerData.tasks, fromUid);
+
+        const mergedTasks = { ...partnerTasksWithOwners, ...myTasksWithOwners };
         const mergedGuests = { ...(partnerData.guests || {}), ...(myData.guests || {}) };
 
         const updates: { [key: string]: any } = {};

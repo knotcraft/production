@@ -46,4 +46,5 @@ export interface Task {
   notes?: string;
   category: string;
   priority: 'High' | 'Medium' | 'Low';
+  owner?: string;
 }

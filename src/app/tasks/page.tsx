@@ -50,6 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isValid } from 'date-fns';
@@ -85,6 +86,7 @@ export default function TasksPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOption, setSortOption] = useState<SortOption>('dueDateAsc');
+    const [taskView, setTaskView] = useState<'all' | 'mine' | 'partner'>('all');
     
     const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -100,7 +102,7 @@ export default function TasksPage() {
         priority: 'Medium',
     });
 
-    const [linkedPartnerUid, setLinkedPartnerUid] = useState<string | null>(null);
+    const [linkedPartner, setLinkedPartner] = useState<{name: string, uid: string} | null>(null);
     
     useEffect(() => {
         if (user && database) {
@@ -118,9 +120,9 @@ export default function TasksPage() {
                 setLoading(false);
             });
             
-            const partnerRef = ref(database, `users/${user.uid}/linkedPartner/uid`);
+            const partnerRef = ref(database, `users/${user.uid}/linkedPartner`);
             const unsubscribePartner = onValue(partnerRef, (snapshot) => {
-                setLinkedPartnerUid(snapshot.val() || null);
+                setLinkedPartner(snapshot.val() || null);
             });
 
             return () => {
@@ -133,7 +135,16 @@ export default function TasksPage() {
     }, [user, database]);
     
     const { groupedTasks, overallProgress } = useMemo(() => {
-        const filtered = tasks.filter(task => task.title.toLowerCase().includes(searchQuery.toLowerCase()));
+        let baseTasks = tasks;
+        if (user && linkedPartner && taskView !== 'all') {
+            if (taskView === 'mine') {
+                baseTasks = tasks.filter(task => task.owner === user.uid);
+            } else if (taskView === 'partner') {
+                baseTasks = tasks.filter(task => task.owner === linkedPartner.uid);
+            }
+        }
+        
+        const filtered = baseTasks.filter(task => task.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
         const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
 
@@ -176,7 +187,7 @@ export default function TasksPage() {
         const progress = totalTasks > 0 ? (completedTasksCount / totalTasks) * 100 : 0;
         
         return { groupedTasks: grouped, overallProgress: { completed: completedTasksCount, total: totalTasks, percentage: progress } };
-    }, [tasks, searchQuery, sortOption]);
+    }, [tasks, searchQuery, sortOption, user, linkedPartner, taskView]);
 
 
     const openTaskDialog = (task: Task | null) => {
@@ -190,7 +201,8 @@ export default function TasksPage() {
                 notes: '', 
                 completed: false,
                 category: taskCategories[0],
-                priority: 'Medium'
+                priority: 'Medium',
+                owner: user?.uid
             });
         }
         setIsTaskDialogOpen(true);
@@ -209,22 +221,23 @@ export default function TasksPage() {
             completed: formState.completed || false,
             category: formState.category,
             priority: formState.priority,
+            owner: formState.owner || user.uid,
         };
 
         try {
             const updates: { [key: string]: any } = {};
             if (activeTask) {
                 updates[`/users/${user.uid}/tasks/${activeTask.id}`] = taskData;
-                if (linkedPartnerUid) {
-                    updates[`/users/${linkedPartnerUid}/tasks/${activeTask.id}`] = taskData;
+                if (linkedPartner) {
+                    updates[`/users/${linkedPartner.uid}/tasks/${activeTask.id}`] = taskData;
                 }
                 toast({ variant: 'success', title: 'Success', description: 'Task updated.' });
             } else {
                 const newTaskKey = push(ref(database, `users/${user.uid}/tasks`)).key;
                 if (!newTaskKey) throw new Error("Could not create task key");
                 updates[`/users/${user.uid}/tasks/${newTaskKey}`] = taskData;
-                if (linkedPartnerUid) {
-                    updates[`/users/${linkedPartnerUid}/tasks/${newTaskKey}`] = taskData;
+                if (linkedPartner) {
+                    updates[`/users/${linkedPartner.uid}/tasks/${newTaskKey}`] = taskData;
                 }
                 toast({ variant: 'success', title: 'Success', description: 'Task added.' });
             }
@@ -241,8 +254,8 @@ export default function TasksPage() {
         const newCompletedStatus = !task.completed;
         const updates: { [key: string]: any } = {};
         updates[`/users/${user.uid}/tasks/${task.id}/completed`] = newCompletedStatus;
-        if (linkedPartnerUid) {
-            updates[`/users/${linkedPartnerUid}/tasks/${task.id}/completed`] = newCompletedStatus;
+        if (linkedPartner) {
+            updates[`/users/${linkedPartner.uid}/tasks/${task.id}/completed`] = newCompletedStatus;
         }
         try {
             await update(ref(database), updates);
@@ -263,8 +276,8 @@ export default function TasksPage() {
         try {
             const updates: { [key: string]: null } = {};
             updates[`/users/${user.uid}/tasks/${taskToDelete.id}`] = null;
-            if (linkedPartnerUid) {
-                updates[`/users/${linkedPartnerUid}/tasks/${taskToDelete.id}`] = null;
+            if (linkedPartner) {
+                updates[`/users/${linkedPartner.uid}/tasks/${taskToDelete.id}`] = null;
             }
             await update(ref(database), updates);
             toast({ variant: 'success', title: 'Success', description: 'Task deleted.' });
@@ -354,6 +367,17 @@ export default function TasksPage() {
                     />
                 </div>
             </div>
+             {linkedPartner && (
+              <div className="px-4 pb-2">
+                <Tabs defaultValue="all" onValueChange={(value) => setTaskView(value as 'all' | 'mine' | 'partner')} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="all">All Tasks</TabsTrigger>
+                        <TabsTrigger value="mine">My Tasks</TabsTrigger>
+                        <TabsTrigger value="partner">{linkedPartner.name}'s Tasks</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+              </div>
+            )}
           </header>
           
           <section className="bg-white dark:bg-[#1c0d11]">
