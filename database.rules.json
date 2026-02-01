@@ -1,0 +1,14 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth.uid != null",
+      "$uid": {
+        ".write": "$uid === auth.uid || (data.exists() && data.child('linkedPartner/uid').val() === auth.uid) || (newData.exists() && newData.child('linkedPartner/uid').val() === auth.uid)"
+      }
+    },
+    "invitations": {
+      ".read": "auth.uid != null",
+      ".write": "auth.uid != null"
+    }
+  }
+}
